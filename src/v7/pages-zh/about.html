@@ -1,0 +1,78 @@
+@title 医生介绍 | EternaWell Medicine
+@desc 认识 EternaWell Medicine 的医生：教育背景、执照资质、专长领域和诊疗理念。
+@shape 0
+@class inner
+@field 0
+<main id="main">
+  <section class="page-hero">
+    <div class="wrap">
+      <div class="content">
+        <span class="eyebrow">医生介绍</span>
+        <h1>{{DOCTOR_NAME}}</h1>
+        <p class="role-line">创始人兼医疗总监 · <span lang="en">{{CLINIC}}</span></p>
+        <p class="lede">在 EternaWell，每位患者都由创办诊所的医生亲自诊治：以严谨的化验为依据，不赶时间、用心倾听，把您当作一个完整的人来看待，而不是一张写满“正常范围”的化验单。</p>
+        <div class="actions">
+          <a href="{{BASE}}/book/" class="btn btn-primary">预约{{DOCTOR_SHORT}} {{ARROW}}</a>
+        </div>
+      </div>
+      <figure class="ph warm r-4x5"><figcaption class="ph-label">肖像 · 医生（照片待提供）</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="section tight">
+    <div class="wrap bio">
+      <div data-reveal>
+        <span class="eyebrow">简介</span>
+        <h2>从<em>倾听</em>开始的诊所。</h2>
+        <div class="bio-text">
+          <p><span class="todo">［医生简介，2–3 段：个人背景、为什么创办 EternaWell、患者可以期待什么。］</span></p>
+          <p>在 EternaWell，诊疗从一次关于您感受的谈话开始，接着是全面的化验，以及会持续复查和调整的治疗方案。</p>
+        </div>
+        <blockquote class="pull"><span class="todo">［医生关于诊疗理念的一句话。］</span></blockquote>
+      </div>
+      <dl class="creds" data-reveal>
+        <div><dt>教育背景</dt><dd><span class="todo">［医学院，毕业年份］</span></dd></div>
+        <div><dt>住院医师与培训</dt><dd><span class="todo">［住院医师 / 专科培训］</span></dd></div>
+        <div><dt>专科认证</dt><dd><span class="todo">［专科委员会认证（如有）］</span></dd></div>
+        <div><dt>执业州</dt><dd><span class="todo">［例如华盛顿州］</span></dd></div>
+        <div><dt>语言</dt><dd><span class="todo">［例如英语、中文］</span></dd></div>
+        <div><dt>专长领域</dt><dd>激素替代治疗 · 体重管理 · 早期冠心病与癌症筛查 · 处方皮肤科</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <div class="bleed">
+    <figure class="ph r-wide" data-reveal><picture><source srcset="{{ROOT}}/assets/img/clinic-space.webp" type="image/webp"><img src="{{ROOT}}/assets/img/clinic-space.jpg" alt="" width="2520" height="1080" loading="lazy" decoding="async"></picture><figcaption class="ph-label">照片 · 诊所内景</figcaption></figure>
+  </div>
+
+  <section class="section">
+    <div class="wrap split">
+      <div data-reveal>
+        <span class="eyebrow">由您选择</span>
+        <h2>来诊所，或<em>在家看诊。</em></h2>
+        <p class="lede">所有服务都可以到我们{{CITY}}的诊所面诊，也可以在任何地方视频问诊。化验可在您附近抽血，医生会通过安全视频为您做咨询和复诊。</p>
+      </div>
+      <ul class="features" data-reveal>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span>诊所面诊：<span lang="en">{{ADDRESS_1}}, {{ADDRESS_2}}</span></span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></svg>安全的视频问诊，随时随地</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>无论哪种方式，都是同样用心的个性化诊疗</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="band-dark section">
+    <div class="wrap split">
+      <div>
+        <span class="eyebrow">以循证医学为根基</span>
+        <h2>围绕您的<em>真实感受</em>来看病。</h2>
+      </div>
+      <div>
+        <div class="actions">
+          <a href="{{BASE}}/book/" class="btn btn-light">预约咨询 {{ARROW}}</a>
+          <a href="{{BASE}}/services/" class="link-u">查看服务项目</a>
+        </div>
+        <p class="cta-note">可用 FSA / HSA 支付</p>
+      </div>
+    </div>
+  </section>
+</main>

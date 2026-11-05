@@ -1,0 +1,331 @@
+<!doctype html>
+<!--
+  3D "photo" studio for the site's placeholder images (no AI, no stock photos).
+  Serve the repo root and open:  /tools/render/studio.html?scene=still&w=1600&h=2000
+  Scenes: still (4:5), skin (1:1), supp (1:1), arches (21:9), corridor (4:5)
+  Rendered with headless Edge by tools/render/render.sh; when finished the page title becomes "done".
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<style>html,body{margin:0;background:#efe9df;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{ "imports": { "three": "/site/vendor/three.module.js" } }</script>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from '/site/vendor/addons/environments/RoomEnvironment.js';
+
+const q = new URLSearchParams(location.search);
+const NAME = q.get('scene') || 'still';
+const W = Number(q.get('w') || 1600), H = Number(q.get('h') || 2000);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1);
+renderer.setSize(W, H);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.92;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+
+// ---------- procedural textures ----------
+function canvasTex(size, draw, repeat = 1) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  draw(g, size);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repeat, repeat);
+  t.anisotropy = 8;
+  return t;
+}
+let seed = 7;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+// Travertine: warm base, horizontal veins and pores
+const travertine = (base = '#e7dccb') => canvasTex(1024, (g, s) => {
+  g.fillStyle = base; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < 260; i++) {
+    const y = rnd() * s, h = 1 + rnd() * 6;
+    g.fillStyle = `rgba(${150 + rnd() * 40},${125 + rnd() * 30},${95 + rnd() * 25},${0.05 + rnd() * 0.12})`;
+    g.fillRect(0, y, s, h);
+  }
+  for (let i = 0; i < 900; i++) {
+    g.fillStyle = `rgba(120,100,75,${0.08 + rnd() * 0.18})`;
+    g.beginPath(); g.ellipse(rnd() * s, rnd() * s, 1 + rnd() * 5, 0.6 + rnd() * 1.5, 0, 0, Math.PI * 2); g.fill();
+  }
+});
+// Linen: fine cross weave
+const linen = (base = '#e9e1d4') => canvasTex(512, (g, s) => {
+  g.fillStyle = base; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < s; i += 2) {
+    g.fillStyle = `rgba(110,95,75,${0.03 + rnd() * 0.05})`; g.fillRect(0, i, s, 1);
+    g.fillStyle = `rgba(255,255,255,${0.03 + rnd() * 0.05})`; g.fillRect(i, 0, 1, s);
+  }
+}, 6);
+// Plaster: soft mottling for walls
+const plaster = (base = '#efe7db') => canvasTex(1024, (g, s) => {
+  g.fillStyle = base; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < 1400; i++) {
+    const r = 10 + rnd() * 60;
+    g.fillStyle = `rgba(${rnd() < 0.5 ? '255,255,255' : '160,140,115'},${0.015 + rnd() * 0.025})`;
+    g.beginPath(); g.arc(rnd() * s, rnd() * s, r, 0, Math.PI * 2); g.fill();
+  }
+}, 2);
+// Oak: long grain
+const oak = () => canvasTex(1024, (g, s) => {
+  g.fillStyle = '#b48a5f'; g.fillRect(0, 0, s, s);
+  for (let i = 0; i < 400; i++) {
+    const x = rnd() * s;
+    g.strokeStyle = `rgba(${90 + rnd() * 40},${60 + rnd() * 25},${35 + rnd() * 20},${0.08 + rnd() * 0.2})`;
+    g.lineWidth = 0.5 + rnd() * 3;
+    g.beginPath(); g.moveTo(x, 0);
+    for (let y = 0; y <= s; y += 64) g.lineTo(x + Math.sin(y * 0.01 + i) * 6, y);
+    g.stroke();
+  }
+});
+
+// ---------- materials ----------
+const M = {
+  stone: (base) => new THREE.MeshStandardMaterial({ map: travertine(base), roughness: 0.82 }),
+  wall: (base) => new THREE.MeshStandardMaterial({ map: plaster(base), roughness: 0.95 }),
+  linen: (base) => new THREE.MeshStandardMaterial({ map: linen(base), roughness: 1 }),
+  oak: () => new THREE.MeshStandardMaterial({ map: oak(), roughness: 0.6 }),
+  brass: () => new THREE.MeshStandardMaterial({ color: '#c9a063', metalness: 1, roughness: 0.28 }),
+  amber: () => new THREE.MeshPhysicalMaterial({ color: '#e9c39a', transmission: 1, thickness: 1.0, roughness: 0.06, ior: 1.5, attenuationColor: new THREE.Color('#8f5a2c'), attenuationDistance: 1.8, clearcoat: 1, clearcoatRoughness: 0.05 }),
+  frost: () => new THREE.MeshPhysicalMaterial({ color: '#ffffff', transmission: 1, thickness: 1.2, roughness: 0.38, ior: 1.5, attenuationColor: new THREE.Color('#efe6d8'), attenuationDistance: 2.5 }),
+  glass: () => new THREE.MeshPhysicalMaterial({ color: '#ffffff', transmission: 1, thickness: 0.15, roughness: 0.02, ior: 1.5 }),
+  water: () => new THREE.MeshPhysicalMaterial({ color: '#ffffff', transmission: 1, thickness: 1.5, roughness: 0.02, ior: 1.33, attenuationColor: new THREE.Color('#e6efe8'), attenuationDistance: 4 }),
+  ceramic: (c = '#f3eee6', r = 0.38) => new THREE.MeshPhysicalMaterial({ color: c, roughness: r, clearcoat: 0.4, clearcoatRoughness: 0.35 }),
+  matte: (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75 }),
+  leaf: () => new THREE.MeshStandardMaterial({ color: '#8f9a7c', roughness: 0.7, side: THREE.DoubleSide }),
+};
+
+function mesh(geo, mat, x = 0, y = 0, z = 0) {
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, y, z);
+  m.castShadow = m.receiveShadow = true;
+  scene.add(m);
+  return m;
+}
+// Lathe from a profile of [radius, height] points
+const lathe = (pts, seg = 96) => new THREE.LatheGeometry(pts.map(([r, h]) => new THREE.Vector2(r, h)), seg);
+const rounded = (r, h, bevel = 0.04) => lathe([[0, 0], [r - bevel, 0], [r, bevel], [r, h - bevel], [r - bevel, h], [0, h]]);
+
+// ---------- light: warm sun through a window (mullions cast shadow lines) ----------
+function sun({ pos = [6, 9, 5], target = [0, 0, 0], intensity = 5, size = 6, mullions = {} } = {}) {
+  scene.add(new THREE.HemisphereLight('#fff4e6', '#bfae96', 0.35));
+  const L = new THREE.DirectionalLight('#ffe6c4', intensity);
+  L.position.set(...pos);
+  L.target.position.set(...target);
+  L.castShadow = true;
+  L.shadow.mapSize.set(4096, 4096);
+  Object.assign(L.shadow.camera, { left: -size, right: size, top: size, bottom: -size, near: 0.5, far: 40 });
+  L.shadow.bias = -0.0004;
+  L.shadow.normalBias = 0.02;
+  L.shadow.radius = 6;
+  scene.add(L, L.target);
+  L.shadow.camera.updateProjectionMatrix();
+  if (mullions) {
+    // A window (wall with four panes) between the sun and the scene. It is on layer 1, which only the
+    // shadow camera sees, so it shapes the light without ever appearing in the picture.
+    const dir = new THREE.Vector3(...pos).sub(new THREE.Vector3(...target)).normalize();
+    const at = new THREE.Vector3(...target).add(dir.clone().multiplyScalar(4.5));
+    const sh = new THREE.Shape();
+    sh.moveTo(-20, -20); sh.lineTo(20, -20); sh.lineTo(20, 20); sh.lineTo(-20, 20); sh.lineTo(-20, -20);
+    const pw = mullions.w || 1.0, ph = mullions.h || 1.5, bar = 0.09;
+    for (const [cx, cy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+      const x0 = cx < 0 ? -pw - bar / 2 : bar / 2, y0 = cy < 0 ? -ph - bar / 2 : bar / 2;
+      const hole = new THREE.Path();
+      hole.moveTo(x0, y0); hole.lineTo(x0 + pw, y0); hole.lineTo(x0 + pw, y0 + ph); hole.lineTo(x0, y0 + ph); hole.lineTo(x0, y0);
+      sh.holes.push(hole);
+    }
+    const gobo = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+    gobo.castShadow = true;
+    gobo.layers.set(1);
+    L.shadow.camera.layers.enable(1);
+    gobo.position.copy(at).add(new THREE.Vector3(...(mullions.offset || [0, 0, 0])));
+    gobo.lookAt(new THREE.Vector3(...pos));
+    gobo.rotateZ(mullions.tilt || 0.12);
+    scene.add(gobo);
+  }
+  const fill = new THREE.DirectionalLight('#eef0ff', 0.25);
+  fill.position.set(-6, 3, 4);
+  scene.add(fill);
+}
+
+// Seamless backdrop: floor + wall
+function backdrop(floorMat, wallMat, wallZ = -2.2) {
+  const f = mesh(new THREE.PlaneGeometry(40, 40), floorMat); f.rotation.x = -Math.PI / 2;
+  const w = mesh(new THREE.PlaneGeometry(40, 20), wallMat, 0, 10, wallZ);
+  return { f, w };
+}
+
+// ---------- props ----------
+function dropperBottle(x, z, s = 1, mat = M.amber()) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(lathe([[0, 0], [0.33, 0], [0.36, 0.03], [0.36, 0.78], [0.3, 0.92], [0.15, 1.0], [0.13, 1.1], [0, 1.1]]), mat);
+  const collar = new THREE.Mesh(rounded(0.16, 0.2, 0.02), M.brass()); collar.position.y = 1.06;
+  const bulb = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.22, 8, 32), M.matte('#2b2522')); bulb.position.y = 1.43;
+  [body, collar, bulb].forEach((m) => { m.castShadow = m.receiveShadow = true; g.add(m); });
+  g.position.set(x, 0, z); g.scale.setScalar(s);
+  scene.add(g); return g;
+}
+function jar(x, z, s = 1, bodyMat = M.ceramic(), lidMat = M.brass()) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(rounded(0.5, 0.48, 0.06), bodyMat);
+  const lid = new THREE.Mesh(rounded(0.52, 0.2, 0.05), lidMat); lid.position.y = 0.48;
+  [body, lid].forEach((m) => { m.castShadow = m.receiveShadow = true; g.add(m); });
+  g.position.set(x, 0, z); g.scale.setScalar(s);
+  scene.add(g); return g;
+}
+function pumpBottle(x, z, s = 1, mat = M.frost()) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(lathe([[0, 0], [0.3, 0], [0.32, 0.03], [0.32, 1.25], [0.26, 1.36], [0.12, 1.4], [0, 1.4]]), mat);
+  const collar = new THREE.Mesh(rounded(0.14, 0.16, 0.02), M.brass()); collar.position.y = 1.38;
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.2, 24), M.brass()); stem.position.y = 1.62;
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.14), M.brass()); head.position.set(0.08, 1.74, 0);
+  [body, collar, stem, head].forEach((m) => { m.castShadow = m.receiveShadow = true; g.add(m); });
+  g.position.set(x, 0, z); g.scale.setScalar(s);
+  scene.add(g); return g;
+}
+function sprig(x, z, h = 2.2, lean = 0.25) {
+  // a eucalyptus-like stem: thin curved stalk with round leaves
+  const g = new THREE.Group();
+  const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, 0), new THREE.Vector3(lean * 0.3, h * 0.45, 0.05), new THREE.Vector3(lean, h, 0)]);
+  const stalk = new THREE.Mesh(new THREE.TubeGeometry(curve, 64, 0.012, 8), M.matte('#7c7a62'));
+  g.add(stalk);
+  const leafGeo = new THREE.CircleGeometry(0.11, 32);
+  for (let i = 0; i < 16; i++) {
+    const t = 0.25 + i / 18;
+    const p = curve.getPoint(Math.min(t, 1));
+    const lf = new THREE.Mesh(leafGeo, M.leaf());
+    lf.position.copy(p).add(new THREE.Vector3((i % 2 ? 1 : -1) * 0.09, 0, 0));
+    lf.rotation.set(rnd() * 0.6, (i % 2 ? 1 : -1) * 0.9 + rnd() * 0.4, rnd());
+    lf.scale.setScalar(0.8 + rnd() * 0.5);
+    g.add(lf);
+  }
+  g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+  g.position.set(x, 0, z);
+  scene.add(g); return g;
+}
+function vase(x, y, z, s = 1) {
+  const g = new THREE.Group();
+  const prof = new THREE.SplineCurve([[0.28, 0], [0.42, 0.22], [0.45, 0.5], [0.33, 0.85], [0.17, 1.03], [0.19, 1.15]].map(([r, h]) => new THREE.Vector2(r, h))).getPoints(60);
+  const v = new THREE.Mesh(new THREE.LatheGeometry([new THREE.Vector2(0, 0), ...prof, new THREE.Vector2(0, 1.15)], 128), M.ceramic('#d9cbb6', 0.7));
+  v.castShadow = v.receiveShadow = true; g.add(v);
+  g.position.set(x, y, z); g.scale.setScalar(s);
+  scene.add(g); return g;
+}
+
+// ---------- scenes ----------
+const camera = new THREE.PerspectiveCamera(30, W / H, 0.1, 100);
+const scenes = {
+  // Product still life on a travertine plinth
+  still() {
+    scene.background = new THREE.Color('#ece4d7');
+    backdrop(M.linen('#ddd1bf'), M.wall('#e6dccc'), -2.6);
+    const plinth = mesh(new THREE.BoxGeometry(2.6, 0.9, 1.6), M.stone(), 0.2, 0.45, -0.4);
+    const top = 0.9;
+    const b = dropperBottle(-0.35, -0.25, 0.95); b.position.y = top;
+    const b2 = dropperBottle(0.32, -0.75, 0.72); b2.position.y = top;
+    const j = jar(0.75, 0.05, 0.62); j.position.y = top;
+    const s = sprig(-0.95, -0.75, 2.3, 0.45); s.position.y = top; s.rotation.y = 0.4;
+    mesh(new THREE.SphereGeometry(0.16, 48, 32), M.stone('#dccdb5'), -0.85, top + 0.16, 0.15);
+    sun({ pos: [-5, 7, 5], target: [0, 1, -0.5], size: 5 });
+    camera.position.set(0.3, 2.4, 6.4); camera.lookAt(0.1, 1.45, -0.4);
+  },
+  // Frosted serum + cream jar on a brass tray, linen
+  skin() {
+    scene.background = new THREE.Color('#ebe3d6');
+    backdrop(M.linen('#ddd2c2'), M.wall('#e7ddcf'), -3);
+    const tray = mesh(new THREE.CylinderGeometry(1.35, 1.35, 0.06, 128), M.brass(), 0, 0.03, 0);
+    const p = pumpBottle(-0.35, -0.15, 1); p.position.y = 0.06;
+    const j = jar(0.55, 0.35, 0.7, M.ceramic('#f6f2ec', 0.3), M.ceramic('#f6f2ec', 0.25)); j.position.y = 0.06;
+    // a swirl of cream on the lid's side: soft blob
+    sun({ pos: [5, 8, 4], target: [0, 0.5, 0], size: 4 });
+    camera.position.set(0.2, 3.1, 5.2); camera.lookAt(0.05, 0.62, 0);
+  },
+  // Ceramic supplement bottle, capsules, glass of water, travertine
+  supp() {
+    scene.background = new THREE.Color('#ece5d9');
+    backdrop(M.stone('#e0d3bf'), M.wall('#e8ded0'), -3);
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(rounded(0.42, 1.0, 0.08), M.ceramic('#e9e1d5', 0.6)); g.add(body);
+    const cap = new THREE.Mesh(rounded(0.36, 0.3, 0.04), M.brass()); cap.position.y = 1.0; g.add(cap);
+    g.traverse((m) => { if (m.isMesh) m.castShadow = m.receiveShadow = true; });
+    g.position.set(-0.45, 0, -0.2); scene.add(g);
+    const capsMat = [M.ceramic('#f4ead8', 0.3), M.ceramic('#c98b4e', 0.25)];
+    const caps = [[0.35, 0.65, 0.4], [0.62, 0.52, -0.6], [0.15, 0.88, 1.2], [0.5, 0.95, 2.4], [-0.05, 0.62, 0.2]];
+    caps.forEach(([x, z, r], i) => {
+      const c = mesh(new THREE.CapsuleGeometry(0.075, 0.16, 8, 32), capsMat[i % 2], x, 0.075, z);
+      c.rotation.set(Math.PI / 2, 0, r);
+    });
+    const cup = mesh(lathe([[0, 0], [0.3, 0], [0.33, 0.9], [0.31, 0.9], [0.28, 0.03], [0, 0.03]]), M.glass(), 0.75, 0, -0.55);
+    mesh(new THREE.CylinderGeometry(0.275, 0.27, 0.6, 64), M.water(), 0.75, 0.33, -0.55);
+    sun({ pos: [-4, 7, 5], target: [0, 0.4, 0], size: 4 });
+    camera.position.set(0.3, 2.9, 5.0); camera.lookAt(0.15, 0.55, -0.05);
+  },
+  // Architectural: a cream wall of arches, sun casting arch shapes on the floor
+  arches() {
+    scene.background = new THREE.Color('#efe7db');
+    const floor = mesh(new THREE.PlaneGeometry(60, 60), M.stone('#e4d8c5'));
+    floor.rotation.x = -Math.PI / 2;
+    floor.material.map.repeat.set(6, 6);
+    // back wall
+    mesh(new THREE.PlaneGeometry(60, 20), M.wall('#efe6d9'), 0, 10, -6);
+    // arcade wall (with arch openings) between sun and floor
+    const shape = new THREE.Shape();
+    shape.moveTo(-16, 0); shape.lineTo(16, 0); shape.lineTo(16, 14); shape.lineTo(-16, 14); shape.lineTo(-16, 0);
+    for (let i = -3; i <= 3; i++) {
+      const cx = i * 3.6, w = 1.2, h = 3.6;
+      const hole = new THREE.Path();
+      hole.moveTo(cx - w, 0.01); hole.lineTo(cx - w, h); hole.absarc(cx, h, w, Math.PI, 0, true); hole.lineTo(cx + w, 0.01); hole.lineTo(cx - w, 0.01);
+      shape.holes.push(hole);
+    }
+    const wall = mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.5, bevelEnabled: false, curveSegments: 48 }), M.wall('#ece2d4'), 0, 0, 3.2);
+    // bench, vase, branch
+    mesh(new THREE.BoxGeometry(3.4, 0.55, 0.8), M.stone('#e2d4be'), 1.6, 0.275, -4.8);
+    vase(-1.4, 0, -5.2, 1.5);
+    const s = sprig(-1.4, -5.2, 3.2, 0.7); s.position.y = 1.5;
+    vase(2.6, 0.55, -4.85, 0.6);
+    sun({ pos: [4, 8, 14], target: [0, 0, -2], size: 16, mullions: false, intensity: 5.5 });
+    camera.fov = 30; camera.updateProjectionMatrix();
+    camera.position.set(-0.4, 1.9, 2.6); camera.lookAt(0.6, 1.1, -6);
+  },
+  // Same space, vertical: looking down the arcade
+  corridor() {
+    scenes.arches();
+    camera.fov = 38; camera.updateProjectionMatrix();
+    camera.position.set(-9, 1.7, 0.4); camera.lookAt(2, 2.2, 2.6);
+  },
+  // Second views of the same space, so pages don't repeat an image
+  arches2() {
+    scenes.arches();
+    camera.fov = 30; camera.updateProjectionMatrix();
+    camera.position.set(3.2, 1.5, 2.6); camera.lookAt(-0.8, 1.0, -6);
+  },
+  corridor2() {
+    scenes.arches();
+    camera.fov = 40; camera.updateProjectionMatrix();
+    camera.position.set(9, 1.6, 0.6); camera.lookAt(-2, 2.0, 2.6);
+  },
+};
+
+(scenes[NAME] || scenes.still)();
+// Soft environment for reflections only; the sun does the lighting, so shadows read clearly
+scene.traverse((o) => { if (o.isMesh && o.material && 'envMapIntensity' in o.material) o.material.envMapIntensity = o.material.metalness > 0.5 ? 0.9 : 0.3; });
+camera.aspect = W / H; camera.updateProjectionMatrix();
+renderer.compile(scene, camera);
+renderer.render(scene, camera);
+requestAnimationFrame(() => { renderer.render(scene, camera); document.title = 'done'; });
+</script>
+</body>
+</html>

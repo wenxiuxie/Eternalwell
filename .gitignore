@@ -1,0 +1,8 @@
+.DS_Store
+*.zip
+Screenshot*
+hello_world_extension/
+.claude/
+# 3D render intermediates (raw PNGs, headless browser profile); finished images live in site/v7/assets/img/
+tools/render/raw/
+__pycache__/

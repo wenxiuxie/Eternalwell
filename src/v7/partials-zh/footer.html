@@ -1,0 +1,57 @@
+<footer>
+  <div class="wrap foot">
+    <div>
+      <p class="foot-brand" lang="en">{{CLINIC}}</p>
+      <p>激素、体重、早期筛查与处方皮肤护理，可在{{CITY}}面诊，也可视频问诊。</p>
+      <form class="signup" name="newsletter-zh" method="POST" action="{{BASE}}/thanks/" data-netlify="true" netlify-honeypot="bot-field">
+        <input type="hidden" name="form-name" value="newsletter-zh">
+        <p class="hp"><label>请留空 <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
+        <label for="signup-email">订阅激素健康小知识和诊所动态（不定期）</label>
+        <div class="row">
+          <input type="email" id="signup-email" name="email" placeholder="电子邮箱" autocomplete="email" required>
+          <button type="submit">订阅</button>
+        </div>
+        <p class="signup-note">您的邮箱只用于发送这些内容，可随时退订。详见<a href="{{BASE}}/legal/#privacy">隐私政策</a>。</p>
+      </form>
+    </div>
+    <div>
+      <h2 class="foot-h">网站导航</h2>
+      <ul class="links">
+        <li><a href="{{BASE}}/services/">服务项目</a></li>
+        <li><a href="{{BASE}}/about/">医生介绍</a></li>
+        <li><a href="{{BASE}}/membership/">会员</a></li>
+        <li><a href="{{BASE}}/products/">产品</a></li>
+        <li><a href="{{BASE}}/faq/">常见问题</a></li>
+        <li><a href="{{BASE}}/book/">立即预约</a></li>
+        <li><a href="{{PORTAL_URL}}" target="_blank" rel="noopener noreferrer">患者门户 {{EXT}}<span class="visually-hidden">（在新标签页打开）</span></a></li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="foot-h">诊所地址</h2>
+      <ul class="links">
+        <li><a href="{{MAP_URL}}" target="_blank" rel="noopener noreferrer" lang="en">{{ADDRESS_1}}<br>{{ADDRESS_2}}<span class="visually-hidden" lang="zh-Hans">（地图，在新标签页打开）</span></a></li>
+        <li>电话或短信 <a href="tel:{{PHONE_TEL}}">{{PHONE_DISPLAY}}</a></li>
+        <li><a href="sms:{{PHONE_TEL}}">发短信预约</a></li>
+        <li><span class="pill">可用 FSA / HSA</span></li>
+        <li>面诊与视频问诊</li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap legal-row">
+    <span>© 2026 <span lang="en">{{CLINIC}}</span>。保留所有权利。</span>
+    <nav aria-label="法律信息">
+      <a href="{{BASE}}/legal/#privacy">隐私政策</a>
+      <a href="{{BASE}}/legal/#health-data">消费者健康数据隐私政策</a>
+      <a href="{{BASE}}/legal/#terms">使用条款</a>
+      <a href="{{BASE}}/legal/#accessibility">无障碍声明</a>
+    </nav>
+  </div>
+  <div class="wrap"><p class="wordmark" aria-hidden="true">EternaWell</p></div>
+</footer>
+{{PREVIEW_PANEL}}
+
+<script src="/vendor/lenis.min.js" defer></script>
+<script src="{{ROOT}}/assets/site.js" defer></script>
+{{FIELD_SCRIPTS}}
+</body>
+</html>

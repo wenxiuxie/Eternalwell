@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>预约后台 — EternaWell Medicine</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .login-wrap { min-height: 80vh; display: grid; place-items: center; padding: 16px; }
+  .login { width: min(400px, 100%); padding: 32px; }
+  .login h1 { font-size: 22px; margin-bottom: 4px; }
+
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--line); }
+  .topbar .inner { max-width: 1240px; margin: 0 auto; padding: 12px 16px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .topbar h1 { font-size: 18px; color: var(--primary); }
+  .topbar .who { font-size: 14px; color: var(--muted); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .tabs { max-width: 1240px; margin: 0 auto; padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; }
+  .tab { border: 0; background: none; font: inherit; font-weight: 600; color: var(--muted); padding: 12px 14px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
+  .tab[aria-selected=true] { color: var(--primary); border-bottom-color: var(--primary); }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 64px; }
+  .panel { padding: 20px; }
+  .panel + .panel { margin-top: 16px; }
+  .panel h2 { font-size: 20px; margin-bottom: 12px; }
+  .panel h3 { font-size: 16px; margin: 20px 0 8px; }
+
+  /* 日历（FullCalendar） */
+  .cal-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+  @media (max-width: 1100px) { .cal-layout { grid-template-columns: 1fr; } }
+  .cal-tips { display: flex; gap: 8px 18px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--muted); margin: 12px 0 0; }
+  .cal-tips span { display: inline-flex; gap: 6px; align-items: center; }
+  .sw { display: inline-block; width: 16px; height: 12px; border-radius: 3px; }
+  .sw.bk { background: var(--primary); }
+  .sw.blk { background: repeating-linear-gradient(135deg, #E3E8EB 0 3px, #C3CCD1 3px 6px); border: 1px solid var(--block); }
+  .sw.ext { border: 1.5px dashed var(--field-line); }
+  .sw.off { background: rgba(91, 107, 113, .14); }
+  #fc {
+    --fc-border-color: var(--line);
+    --fc-page-bg-color: var(--surface);
+    --fc-neutral-bg-color: #F4F7F8;
+    --fc-today-bg-color: #FFF7E3;
+    --fc-now-indicator-color: #C4320A;
+    --fc-non-business-color: rgba(91, 107, 113, .10);
+    --fc-highlight-color: rgba(11, 100, 119, .16);
+    --fc-button-bg-color: var(--surface);
+    --fc-button-text-color: var(--primary);
+    --fc-button-border-color: var(--field-line);
+    --fc-button-hover-bg-color: var(--primary-weak);
+    --fc-button-hover-border-color: var(--primary);
+    --fc-button-active-bg-color: var(--primary);
+    --fc-button-active-border-color: var(--primary-dark);
+    --fc-list-event-hover-bg-color: var(--primary-weak);
+    font-size: 14px;
+  }
+  #fc .fc-toolbar { flex-wrap: wrap; gap: 8px; }
+  #fc .fc-toolbar-title { font-size: 20px; color: var(--ink); }
+  #fc .fc-button { font-weight: 600; box-shadow: none; padding: .45em .8em; }
+  #fc .fc-button-primary:not(:disabled).fc-button-active, #fc .fc-button-primary:not(:disabled):active { color: #fff; }
+  #fc .fc-button:focus-visible { box-shadow: var(--focus); }
+  #fc .fc-col-header-cell-cushion, #fc .fc-daygrid-day-number { color: var(--ink); text-decoration: none; font-weight: 600; }
+  #fc .fc-timegrid-slot { height: 1.6em; }
+  #fc .fc-timegrid-slot-label-cushion, #fc .fc-timegrid-axis-cushion { color: var(--muted); }
+  #fc .fc-event { cursor: pointer; border-radius: 6px; }
+  #fc .fc-event.bk { background: var(--primary); border-color: var(--primary-dark); }
+  #fc .fc-event.bk .fc-event-main, #fc .fc-event.bk .fc-event-time, #fc .fc-event.bk .fc-event-title { color: #fff; }
+  #fc .fc-event.blk { background: repeating-linear-gradient(135deg, #E3E8EB 0 6px, #D2D9DD 6px 12px); border: 1px solid var(--block); }
+  #fc .fc-event.blk .fc-event-main, #fc .fc-event.blk .fc-event-time, #fc .fc-event.blk .fc-event-title { color: #22313A; }
+  #fc .fc-event.ext { background: #fff; border: 1.5px dashed var(--field-line); }
+  #fc .fc-event.ext .fc-event-main, #fc .fc-event.ext .fc-event-time, #fc .fc-event.ext .fc-event-title { color: var(--muted); }
+  #fc .fc-list-event.bk .fc-list-event-dot { border-color: var(--primary); }
+  #fc .fc-list-event.blk .fc-list-event-dot { border-color: var(--block); }
+  #fc .fc-list-event.ext .fc-list-event-dot { border-color: var(--field-line); }
+  #fc .fc-list-event.bk, #fc .fc-list-event.blk, #fc .fc-list-event.ext { background: none; border: 0; }
+  #fc .fc-list-event td { color: var(--ink); }
+  #fc .fc-daygrid-block-event .fc-event-time { flex: none; }
+  #fc .fc-daygrid-block-event .fc-event-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #fc .fc-event.selected { box-shadow: 0 0 0 3px #fff, 0 0 0 5px #E8A100; }
+
+  .day h2 { font-size: 18px; margin: 0 0 4px; }
+  .day .sub { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+  .day .actions-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .day .hours { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+  .item { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+  .item.bk { border-left: 4px solid var(--primary); }
+  .item.blk { border-left: 4px solid var(--block); background: var(--block-weak); }
+  .item .row1 { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+  .item .t { font-weight: 700; }
+  .item .meta { font-size: 14px; color: var(--muted); }
+  .item .meta a { word-break: break-all; }
+  .badge { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); white-space: nowrap; }
+  details.box { border: 1px solid var(--line); border-radius: 10px; padding: 0 12px; margin-top: 12px; }
+  details.box > summary { padding: 12px 0; font-weight: 700; cursor: pointer; color: var(--primary); }
+  details.box[open] { padding-bottom: 12px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > .field { flex: 1 1 120px; }
+  .radio-row { display: flex; gap: 20px; margin-bottom: 12px; flex-wrap: wrap; }
+
+  /* 表格 */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  tr.bad td { background: var(--danger-weak); }
+  tr.past td { color: var(--faint); }
+  .status-bad { color: var(--danger); font-weight: 600; }
+
+  /* 设置 */
+  .hours-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: start; }
+  @media (max-width: 560px) { .hours-row { grid-template-columns: 1fr; } }
+  .intervals { display: flex; flex-direction: column; gap: 8px; }
+  .interval { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .interval input { width: 130px; }
+  .type-card { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 16px; }
+
+  .mail { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; }
+  .mail summary { padding: 10px 12px; cursor: pointer; display: flex; gap: 8px; flex-wrap: wrap; }
+  .mail iframe { width: 100%; height: 420px; border: 0; border-top: 1px solid var(--line); background: #fff; }
+  .mail pre { margin: 0; padding: 12px; border-top: 1px solid var(--line); white-space: pre-wrap; font: inherit; }
+  .log li { padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .log time { color: var(--muted); font-size: 14px; margin-right: 8px; }
+</style>
+</head>
+<body>
+<div id="demo-banner" class="demo-banner" hidden>
+  演示模式：数据只存在本浏览器，邮件不会真的发出（在“动态与邮件”里查看）。<a href="booking.html" target="_blank">打开病人预约页 ↗</a>
+</div>
+
+<!-- 登录 -->
+<div class="login-wrap" id="login-view" hidden>
+  <form class="card login" id="login-form">
+    <h1>EternaWell 预约后台</h1>
+    <p class="hint" style="margin:0 0 20px" id="login-hint">请输入后台密码</p>
+    <div id="login-error" role="alert"></div>
+    <div class="field">
+      <label for="password">密码</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+    </div>
+    <button class="btn" type="submit" style="width:100%">登录</button>
+  </form>
+</div>
+
+<!-- 后台 -->
+<div id="app" hidden>
+  <header class="topbar">
+    <div class="inner">
+      <h1>EternaWell 预约后台</h1>
+      <div class="who"><span id="owner"></span><a href="booking.html" target="_blank">病人预约页 ↗</a><button class="btn secondary small" id="logout">退出</button></div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="后台功能">
+      <button class="tab" role="tab" data-tab="calendar" aria-selected="true">日历</button>
+      <button class="tab" role="tab" data-tab="list" aria-selected="false">预约列表</button>
+      <button class="tab" role="tab" data-tab="import" aria-selected="false">导入排班表</button>
+      <button class="tab" role="tab" data-tab="settings" aria-selected="false">设置</button>
+      <button class="tab" role="tab" data-tab="activity" aria-selected="false">动态与邮件</button>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <div id="global-msg" role="status" aria-live="polite"></div>
+
+    <!-- 日历 -->
+    <section id="tab-calendar" role="tabpanel">
+      <div class="cal-layout">
+        <div class="card panel">
+          <div id="fc"></div>
+          <div class="cal-tips">
+            <span><i class="sw bk"></i>预约</span>
+            <span><i class="sw blk"></i>⛔ 不可预约</span>
+            <span><i class="sw ext"></i>Google 日历里的其他事件</span>
+            <span><i class="sw off"></i>不出诊时间</span>
+            <span>· 空白处按住拖动 = 设不可预约或代约 · 拖动预约 = 改时间 · 拉下边缘 = 改时长</span>
+          </div>
+        </div>
+        <aside class="card panel day" id="day-panel" aria-live="polite"></aside>
+      </div>
+    </section>
+
+    <!-- 预约列表 -->
+    <section id="tab-list" role="tabpanel" hidden>
+      <div class="card panel">
+        <h2>接下来 120 天的预约</h2>
+        <div class="field" style="max-width:360px">
+          <label for="search">搜索（姓名、电话、邮箱、编号）</label>
+          <input id="search" type="text">
+        </div>
+        <div class="table-wrap" id="list-table"></div>
+      </div>
+    </section>
+
+    <!-- 导入 -->
+    <section id="tab-import" role="tabpanel" hidden>
+      <div class="card panel">
+        <h2>上传排班表（EZCall 工作日）</h2>
+        <p>把医院的上班日期整理成 Excel 上传，这些时间病人就约不到。</p>
+        <ol>
+          <li><a href="../排班表模板.xlsx" download>下载 Excel 模板</a>：一行一个日期；只填日期 = 全天不可约，填了开始/结束时间 = 只挡那段时间。</li>
+          <li>选择文件（.xlsx / .xls / .csv），先看预览，确认无误再导入。</li>
+          <li><strong>再次导入会替换上次导入的、今天以后的记录</strong>；在日历上手动设置的不受影响。</li>
+        </ol>
+        <div class="field" style="max-width:420px">
+          <label for="file">选择排班表文件</label>
+          <input id="file" type="file" accept=".xlsx,.xls,.csv">
+        </div>
+        <div id="import-msg" role="status" aria-live="polite"></div>
+        <div id="import-preview"></div>
+      </div>
+    </section>
+
+    <!-- 设置 -->
+    <section id="tab-settings" role="tabpanel" hidden>
+      <form id="settings-form" novalidate>
+        <div class="card panel">
+          <h2>诊所信息</h2>
+          <div class="grid-2">
+            <div class="field"><label for="s-clinicName">诊所名称</label><input id="s-clinicName" type="text"></div>
+            <div class="field"><label for="s-clinicPhone">电话</label><input id="s-clinicPhone" type="tel"></div>
+          </div>
+          <div class="field"><label for="s-clinicAddress">地址</label><input id="s-clinicAddress" type="text"></div>
+          <div class="field">
+            <label for="s-bookingPageUrl">病人预约页网址</label>
+            <span class="hint" id="h-url">确认邮件里“管理预约”的链接会用它。本机测试时填 http://localhost:8000/web/booking.html</span>
+            <input id="s-bookingPageUrl" type="url" aria-describedby="h-url">
+          </div>
+          <div class="field">
+            <label for="s-notifyEmail">新预约通知发到哪个邮箱</label>
+            <span class="hint" id="h-mail">留空 = 发到部署这个系统的 Google 账号</span>
+            <input id="s-notifyEmail" type="email" aria-describedby="h-mail">
+          </div>
+        </div>
+
+        <div class="card panel">
+          <h2>每周出诊时间</h2>
+          <p class="hint" style="margin-top:0">病人只能约在这些时间里。午休就分成两段。</p>
+          <div id="hours-editor"></div>
+        </div>
+
+        <div class="card panel">
+          <h2>看诊类型</h2>
+          <p class="hint" style="margin-top:0">名称和说明是给病人看的，用英文。</p>
+          <div id="types-editor"></div>
+          <button type="button" class="btn secondary small" id="add-type">＋ 新增看诊类型</button>
+        </div>
+
+        <div class="card panel">
+          <h2>预约规则</h2>
+          <div class="grid-2">
+            <div class="field"><label for="s-slotStep">可选时间的间隔（分钟）</label><span class="hint">30 = 9:00、9:30、10:00…</span><input id="s-slotStep" type="number" min="5" max="120"></div>
+            <div class="field"><label for="s-buffer">两个预约之间的缓冲（分钟）</label><span class="hint">也用在不可预约时段前后</span><input id="s-buffer" type="number" min="0" max="120"></div>
+            <div class="field"><label for="s-minNoticeHours">最少提前几小时预约</label><input id="s-minNoticeHours" type="number" min="0" max="720"></div>
+            <div class="field"><label for="s-maxAdvanceDays">最远能约到几天以后</label><input id="s-maxAdvanceDays" type="number" min="1" max="400"></div>
+            <div class="field"><label for="s-cancelNoticeHours">病人网上改期/取消的截止（看诊前几小时）</label><input id="s-cancelNoticeHours" type="number" min="0" max="720"></div>
+          </div>
+          <label class="check" for="s-usePrimaryCalendar">
+            <input id="s-usePrimaryCalendar" type="checkbox">
+            <span><strong>同时避开我 Google 个人日历里的事件</strong><br><span class="hint">打开后，你在手机 Google 日历里加的任何事件（包括全天事件）都会挡掉那段时间。临时有事时最方便。</span></span>
+          </label>
+        </div>
+
+        <div id="settings-msg" role="status" aria-live="polite" style="margin-top:16px"></div>
+        <button type="submit" class="btn" style="margin-top:8px">保存设置</button>
+      </form>
+
+      <div class="card panel" style="margin-top:24px">
+        <h2>修改后台密码</h2>
+        <form id="pw-form" class="grid-2" novalidate>
+          <div class="field"><label for="pw-old">原密码</label><input id="pw-old" type="password" autocomplete="current-password"></div>
+          <div class="field"><label for="pw-new">新密码（至少 8 位）</label><input id="pw-new" type="password" autocomplete="new-password"></div>
+          <div><button type="submit" class="btn secondary">修改密码</button></div>
+        </form>
+        <div id="pw-msg" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="card panel" style="margin-top:24px">
+        <h2>测试工具</h2>
+        <p>删除所有预约（包括 Google 日历里的）和所有不可预约记录。设置和密码保留。<strong>正式上线后不要用。</strong></p>
+        <button type="button" class="btn danger secondary" id="clear-data">清空测试数据</button>
+        <button type="button" class="btn danger secondary" id="reset-demo" hidden>重置整个演示（连设置和密码）</button>
+      </div>
+    </section>
+
+    <!-- 动态 -->
+    <section id="tab-activity" role="tabpanel" hidden>
+      <div class="card panel">
+        <h2>演示邮箱</h2>
+        <div id="outbox"></div>
+      </div>
+      <div class="card panel">
+        <h2>最近动态</h2>
+        <ul class="log" id="log" style="list-style:none;padding:0;margin:0"></ul>
+      </div>
+    </section>
+  </div>
+</div>
+
+<dialog id="cancel-dialog" aria-labelledby="h-cd">
+  <form id="cancel-form" method="dialog">
+    <h2 id="h-cd">取消这个预约？</h2>
+    <p id="cd-text"></p>
+    <div class="field">
+      <label for="cd-reason">原因（会写进给病人的邮件，用英文，可不填）</label>
+      <input id="cd-reason" type="text" placeholder="e.g. The doctor is unavailable that day.">
+    </div>
+    <label class="check" for="cd-notify"><input id="cd-notify" type="checkbox" checked><span>发邮件通知病人</span></label>
+    <div id="cd-error" role="alert"></div>
+    <div class="dialog-actions">
+      <button type="button" class="btn secondary" id="cd-keep">不取消</button>
+      <button type="submit" class="btn danger" id="cd-confirm">确认取消</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="move-dialog" aria-labelledby="h-md">
+  <h2 id="h-md">修改预约时间？</h2>
+  <p id="md-text"></p>
+  <label class="check" for="md-notify"><input id="md-notify" type="checkbox" checked><span>发邮件通知病人新时间</span></label>
+  <div id="md-error" role="alert" style="margin-top:12px"></div>
+  <div class="dialog-actions">
+    <button type="button" class="btn secondary" id="md-cancel">不改了</button>
+    <button type="button" class="btn" id="md-confirm">确认改期</button>
+  </div>
+</dialog>
+
+<!-- 外部组件用 defer 加载，不挡住登录框；用到时再等它们加载完 -->
+<script defer src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/zh-cn.global.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const esc = EW.esc;
+  const ZH = EW.ZH_DAYS;
+  const st = {
+    token: EW.storage.get('ew_admin_token') || '',
+    today: '',
+    data: null,       // 当前月历范围的 adminData
+    settings: null,
+    entries: null     // 待导入的排班
+  };
+
+  if (EW.DEMO) {
+    $('demo-banner').hidden = false;
+    $('login-hint').innerHTML = '演示密码：<strong>eternawell-test</strong>';
+    $('reset-demo').hidden = false;
+  } else {
+    $('login-hint').textContent = '初始密码见《部署与测试说明》，登录后请修改';
+  }
+
+  function msg(el, kind, text) {
+    el.innerHTML = text ? '<p class="notice ' + kind + '">' + text + '</p>' : '';
+  }
+  function flash(kind, text) {
+    msg($('global-msg'), kind, esc(text));
+    clearTimeout(flash.t);
+    flash.t = setTimeout(() => { $('global-msg').innerHTML = ''; }, 6000);
+  }
+
+  async function api(action, payload) {
+    try {
+      return await EW.call(action, Object.assign({ token: st.token }, payload || {}));
+    } catch (err) {
+      if (err.code === 'AUTH') logout(err.message);
+      throw err;
+    }
+  }
+
+  /* ── 登录 ── */
+  function logout(reason) {
+    st.token = '';
+    EW.storage.remove('ew_admin_token');
+    $('app').hidden = true;
+    $('login-view').hidden = false;
+    msg($('login-error'), reason ? 'warn' : '', esc(reason || ''));
+    $('password').focus();
+  }
+  $('logout').addEventListener('click', () => logout(''));
+  $('login-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    msg($('login-error'), '', '');
+    try {
+      st.token = (await EW.call('login', { password: $('password').value })).token;
+      EW.storage.set('ew_admin_token', st.token);
+      $('password').value = '';
+      enter();
+    } catch (err) {
+      msg($('login-error'), 'error', esc(err.message));
+    }
+  });
+
+  async function enter() {
+    $('login-view').hidden = true;
+    $('app').hidden = false;
+    if (!window.FullCalendar) await new Promise(r => window.addEventListener('load', r, { once: true }));
+    if (!window.FullCalendar) { flash('error', '日历组件没加载成功（需要联网），请刷新页面'); return; }
+    if (!cal) initCalendar(); else refresh();
+  }
+
+  /* ── 标签页 ── */
+  document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => openTab(tab.dataset.tab)));
+  function openTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
+    ['calendar', 'list', 'import', 'settings', 'activity'].forEach(n => { $('tab-' + n).hidden = n !== name; });
+    if (name === 'calendar' && cal) { cal.updateSize(); refresh(); }
+    if (name === 'list') loadList();
+    if (name === 'settings') renderSettings();
+    if (name === 'activity') renderActivity();
+  }
+
+  /* ── 日历（FullCalendar） ──
+   * 后端给的时间都是诊所当地时间（不带时区）。日历用 timeZone: 'UTC' 原样显示这些"墙上时间"，
+   * 这样无论在哪个时区打开后台，看到的都是诊所时间。 */
+  let cal = null;
+  const parts = d => { const s = d.toISOString(); return { date: s.slice(0, 10), time: s.slice(11, 16) }; };
+  const minutesBetween = (a, b) => Math.round((b.getTime() - a.getTime()) / 60000);
+
+  function clinicNow() {
+    const o = {};
+    new Intl.DateTimeFormat('en-US', { timeZone: EW.TZ, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      .formatToParts(new Date()).forEach(p => { o[p.type] = p.value; });
+    return o.year + '-' + o.month + '-' + o.day + 'T' + o.hour + ':' + o.minute + ':' + o.second;
+  }
+
+  function businessHours(s) {
+    const list = [];
+    Object.keys(s.weeklyHours).forEach(d => s.weeklyHours[d].forEach(iv => list.push({ daysOfWeek: [Number(d)], startTime: iv.start, endTime: iv.end })));
+    return list.length ? list : false;
+  }
+
+  function shortType(name) {
+    return name.replace(/ (Consultation|Visit)$/i, '');
+  }
+
+  function toEvents(d) {
+    const ev = [];
+    d.bookings.forEach(b => {
+      if (b.external) {
+        ev.push(b.allDay
+          ? { id: 'x:' + b.eventId, title: b.title, start: b.date, end: EW.addDays(b.date, Math.max(1, Math.round(b.duration / 1440))), allDay: true, editable: false, classNames: ['ext'], extendedProps: { kind: 'ext', b: b } }
+          : { id: 'x:' + b.eventId, title: b.title, start: b.date + 'T' + b.time, end: b.date + 'T' + b.end, editable: false, classNames: ['ext'], extendedProps: { kind: 'ext', b: b } });
+      } else {
+        ev.push({ id: 'b:' + b.id, title: b.name + ' · ' + shortType(b.typeName) + (b.mode === 'telehealth' ? '（远程）' : ''),
+          start: b.date + 'T' + b.time, end: b.date + 'T' + b.end, classNames: ['bk'], extendedProps: { kind: 'bk', b: b } });
+      }
+    });
+    d.blocks.forEach(k => {
+      ev.push({ id: 'k:' + k.id, title: '⛔ 不可预约' + (k.note ? ' · ' + k.note : ''),
+        start: k.start ? k.date + 'T' + k.start : k.date, end: k.start ? k.date + 'T' + k.end : undefined, allDay: !k.start,
+        classNames: ['blk'], extendedProps: { kind: 'blk', block: k } });
+    });
+    return ev;
+  }
+
+  function fetchEvents(info, success, failure) {
+    const from = info.startStr.slice(0, 10);
+    const to = parts(new Date(info.end.getTime() - 1)).date;
+    api('adminData', { from: from, to: to }).then(d => {
+      st.data = d;
+      st.today = d.today;
+      $('owner').textContent = d.owner + ' · 日历“' + d.calendarName + '”';
+      const bh = JSON.stringify(businessHours(d.settings));
+      if (!st.settings || JSON.stringify(businessHours(st.settings)) !== bh) cal.setOption('businessHours', businessHours(d.settings));
+      st.settings = d.settings;
+      success(toEvents(d));
+      if (!st.panelShown) { st.panelShown = true; panelDays([d.today]); }
+      else if (st.panel) st.panel();
+    }).catch(err => {
+      failure(err);
+      if (err.code !== 'AUTH') flash('error', err.message);
+    });
+  }
+
+  function initCalendar() {
+    const narrow = window.matchMedia('(max-width: 700px)').matches;
+    cal = new FullCalendar.Calendar($('fc'), {
+      locale: 'zh-cn',
+      timeZone: 'UTC',
+      now: clinicNow,
+      initialView: narrow ? 'listWeek' : 'timeGridWeek',
+      headerToolbar: narrow
+        ? { left: 'prev,next today', center: '', right: 'title' }
+        : { left: 'prev,next today', center: 'title', right: 'timeGridDay,timeGridWeek,dayGridMonth,listWeek' },
+      footerToolbar: narrow ? { center: 'timeGridDay,listWeek,dayGridMonth' } : false,
+      buttonText: { today: '今天', day: '日', week: '周', month: '月', list: '列表' },
+      height: narrow ? 'auto' : 780,
+      firstDay: 0,
+      allDayText: '全天',
+      slotMinTime: '06:00:00',
+      slotMaxTime: '21:00:00',
+      scrollTime: '08:00:00',
+      slotDuration: '00:15:00',
+      slotLabelInterval: '01:00',
+      slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+      eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+      nowIndicator: true,
+      navLinks: true,
+      dayMaxEvents: true,
+      eventDisplay: 'block',
+      selectable: true,
+      selectMirror: true,
+      selectLongPressDelay: 300,
+      eventLongPressDelay: 300,
+      editable: true,
+      noEventsContent: '这段时间没有安排',
+      businessHours: st.settings ? businessHours(st.settings) : false,
+      events: fetchEvents,
+      select: onSelect,
+      eventClick: info => { info.jsEvent.preventDefault(); markSelected(info.event.id); panelEvent(info.event.id); },
+      eventDrop: onEventChange,
+      eventResize: onEventChange
+    });
+    cal.render();
+  }
+
+  function refresh() {
+    if (cal) cal.refetchEvents();
+  }
+
+  function markSelected(id) {
+    st.selectedEvent = id;
+    document.querySelectorAll('#fc .fc-event.selected').forEach(el => el.classList.remove('selected'));
+    if (!id) return;
+    const ev = cal.getEventById(id);
+    if (ev) ev.setProp('classNames', ev.classNames.filter(c => c !== 'selected').concat('selected'));
+  }
+
+  /* 选中空白区域 */
+  function onSelect(info) {
+    const s = parts(info.start), e = parts(info.end);
+    markSelected('');
+    if (info.allDay) {
+      const dates = [];
+      for (let d = s.date; d < e.date; d = EW.addDays(d, 1)) dates.push(d);
+      panelDays(dates);
+      return;
+    }
+    let endTime = e.time;
+    if (e.date !== s.date) {
+      if (e.time === '00:00' && EW.addDays(s.date, 1) === e.date) endTime = '23:59';
+      else { cal.unselect(); flash('warn', '一次只能选同一天里的一段时间'); return; }
+    }
+    panelRange(s.date, s.time, endTime);
+  }
+
+  /* 拖动或拉长 */
+  async function onEventChange(info) {
+    const kind = info.event.extendedProps.kind;
+    const s = parts(info.event.start);
+    if (kind === 'blk') {
+      const old = info.event.extendedProps.block;
+      const payload = { id: old.id, date: old.date, newDate: s.date, start: '', end: '' };
+      if (!info.event.allDay) {
+        const e = info.event.end ? parts(info.event.end) : parts(new Date(info.event.start.getTime() + 3600000));
+        if (e.date !== s.date && !(e.time === '00:00')) { info.revert(); flash('warn', '不可预约时段不能跨天，跨天请分开设'); return; }
+        payload.start = s.time;
+        payload.end = e.date !== s.date ? '23:59' : e.time;
+      }
+      try {
+        const res = await api('updateBlock', payload);
+        warnConflicts(res.conflicts, '已修改不可预约时段');
+        refresh();
+      } catch (err) {
+        info.revert();
+        if (err.code !== 'AUTH') flash('error', err.message);
+      }
+      return;
+    }
+    if (kind === 'bk') {
+      if (info.event.allDay) { info.revert(); flash('warn', '预约不能放到“全天”栏'); return; }
+      const b = info.event.extendedProps.b;
+      openMove(b, s.date, s.time, minutesBetween(info.event.start, info.event.end), info.revert);
+    }
+  }
+
+  function warnConflicts(conflicts, okText) {
+    if (conflicts && conflicts.length) {
+      flash('warn', okText + '。注意：这段时间里已有 ' + conflicts.length + ' 个预约（' +
+        conflicts.map(c => c.date.slice(5) + ' ' + c.time + ' ' + c.name).join('、') + '），系统不会自动取消，请自行联系病人。');
+    } else flash('ok', okText);
+  }
+
+  /* ── 右侧面板 ── */
+  function itemsOn(date) {
+    const d = st.data || { bookings: [], blocks: [] };
+    return { bookings: d.bookings.filter(b => b.date === date), blocks: d.blocks.filter(b => b.date === date), hours: st.settings.weeklyHours[EW.weekday(date)] || [] };
+  }
+  const hoursText = h => (h.length ? h.map(iv => iv.start + '–' + iv.end).join('、') : '不出诊');
+  const typeOptions = () => st.settings.visitTypes.map(t => '<option value="' + esc(t.id) + '">' + esc(t.name) + '（' + t.duration + ' 分钟）' + (t.active ? '' : ' [已停用]') + '</option>').join('');
+
+  function bookingCard(b) {
+    if (b.external) {
+      return '<div class="item"><div class="row1"><span class="t">' + esc(b.allDay ? '全天' : b.time + '–' + b.end) + '</span><span class="badge">Google 日历事件</span></div>' +
+        '<div class="meta">' + esc(b.title) + '</div></div>';
+    }
+    return '<div class="item bk"><div class="row1"><span class="t">' + b.time + '–' + b.end + '</span>' +
+      '<span class="badge">' + (b.source === 'clinic' ? '诊所代约' : '网站预约') + '</span></div>' +
+      '<div><strong>' + esc(b.name) + '</strong> · ' + esc(b.typeName) + (b.mode === 'telehealth' ? '（远程）' : '') + '</div>' +
+      '<div class="meta">' + (b.phone ? '<a href="tel:' + esc(b.phone.replace(/[^\d+]/g, '')) + '">' + esc(b.phone) + '</a>' : '') +
+      (b.phone && b.email ? ' · ' : '') + (b.email ? '<a href="mailto:' + esc(b.email) + '">' + esc(b.email) + '</a>' : '') + '</div>' +
+      '<div class="meta">编号 ' + esc(b.id) + '</div>' +
+      '<div class="actions-row"><button type="button" class="btn danger secondary small" data-cancel="' + esc(b.id) + '">取消预约</button></div></div>';
+  }
+
+  function blockCard(k) {
+    return '<div class="item blk"><div class="row1"><span class="t">⛔ ' + (k.start ? k.start + '–' + k.end : '全天') + '</span>' +
+      '<span class="badge">' + (k.src === 'excel' ? '排班表导入' : '手动') + '</span></div>' +
+      (k.note ? '<div class="meta">' + esc(k.note) + '</div>' : '') +
+      '<div class="actions-row"><button type="button" class="btn secondary small" data-unblock="' + esc(k.id) + '" data-date="' + k.date + '">恢复可预约</button></div></div>';
+  }
+
+  function bookForm(date, time) {
+    return '<details class="box"' + (time ? ' open' : '') + '><summary>代病人预约（电话预约等）</summary>' +
+      '<form id="book-form" novalidate data-date="' + date + '">' +
+        '<div class="field"><label for="ab-type">看诊类型</label><select id="ab-type">' + typeOptions() + '</select></div>' +
+        '<div class="field"><label for="ab-time">开始时间</label><input id="ab-time" type="time" value="' + (time || '10:00') + '"></div>' +
+        '<div class="field"><label for="ab-name">病人姓名</label><input id="ab-name" type="text"></div>' +
+        '<div class="row"><div class="field"><label for="ab-phone">电话</label><input id="ab-phone" type="tel"></div>' +
+        '<div class="field"><label for="ab-email">邮箱</label><input id="ab-email" type="email"></div></div>' +
+        '<label class="check" for="ab-notify"><input id="ab-notify" type="checkbox" checked><span>有邮箱就发确认邮件给病人</span></label>' +
+        '<label class="check" for="ab-force" style="margin-top:8px"><input id="ab-force" type="checkbox"><span>允许和已有安排冲突</span></label>' +
+        '<div id="ab-msg" role="status" style="margin-top:12px"></div>' +
+        '<button class="btn small" type="submit" style="margin-top:8px">保存预约</button>' +
+      '</form></details>';
+  }
+
+  /** 一天（或连续几天）的概览 */
+  function panelDays(dates) {
+    st.panel = () => panelDays(dates);
+    if (dates.length > 1) {
+      $('day-panel').innerHTML = '<h2>' + EW.zhDate(dates[0]) + ' 到 ' + EW.zhDate(dates[dates.length - 1]) + '</h2>' +
+        '<p class="sub">选中了 ' + dates.length + ' 天</p>' +
+        '<form id="multi-form" novalidate><div class="field"><label for="m-note">备注（只有你看得到）</label><input id="m-note" type="text" placeholder="例如：休假"></div>' +
+        '<div id="m-msg" role="status"></div><button class="btn" type="submit">这 ' + dates.length + ' 天全天不可预约</button></form>';
+      $('multi-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        try {
+          const res = await api('addBlock', { dates: dates, note: $('m-note').value });
+          warnConflicts(res.conflicts, '已把 ' + dates.length + ' 天设为不可预约');
+          cal.unselect();
+          refresh();
+        } catch (err) { if (err.code !== 'AUTH') msg($('m-msg'), 'error', esc(err.message)); }
+      });
+      return;
+    }
+    const date = dates[0];
+    const it = itemsOn(date);
+    $('day-panel').innerHTML =
+      '<h2>' + EW.zhDate(date) + '</h2>' +
+      '<p class="sub">出诊时间：' + hoursText(it.hours) + (date < st.today ? ' · 已过去' : '') + '</p>' +
+      '<h3>预约（' + it.bookings.filter(b => !b.external).length + '）</h3>' +
+      (it.bookings.length ? it.bookings.map(bookingCard).join('') : '<p class="hint">没有预约</p>') +
+      (it.blocks.length ? '<h3>不可预约</h3>' + it.blocks.map(blockCard).join('') : '') +
+      '<div class="actions-row"><button type="button" class="btn secondary small" id="block-day">这天全天不可预约</button>' +
+      '<button type="button" class="btn secondary small" id="open-day">看这一天的日程</button></div>' +
+      bookForm(date, '');
+    $('block-day').addEventListener('click', async () => {
+      try {
+        const res = await api('addBlock', { date: date });
+        warnConflicts(res.conflicts, '已设为全天不可预约');
+        refresh();
+      } catch (err) { if (err.code !== 'AUTH') flash('error', err.message); }
+    });
+    $('open-day').addEventListener('click', () => cal.changeView('timeGridDay', date));
+    bindBookForm();
+  }
+
+  /** 选中了一段时间 */
+  function panelRange(date, start, end) {
+    st.panel = null;
+    $('day-panel').innerHTML =
+      '<h2>' + EW.zhDate(date) + '</h2>' +
+      '<p class="sub">选中 ' + start + '–' + end + ' · 出诊时间：' + hoursText(itemsOn(date).hours) + '</p>' +
+      '<details class="box" open><summary>设为不可预约</summary>' +
+        '<form id="range-form" novalidate><div class="row">' +
+          '<div class="field"><label for="r-start">开始</label><input id="r-start" type="time" value="' + start + '"></div>' +
+          '<div class="field"><label for="r-end">结束</label><input id="r-end" type="time" value="' + end + '"></div></div>' +
+          '<div class="field"><label for="r-note">备注（只有你看得到）</label><input id="r-note" type="text" placeholder="例如：医院白班"></div>' +
+          '<div id="r-msg" role="status"></div><button class="btn small" type="submit">设为不可预约</button></form></details>' +
+      bookForm(date, start);
+    $('range-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      try {
+        const res = await api('addBlock', { date: date, start: $('r-start').value, end: $('r-end').value, note: $('r-note').value });
+        warnConflicts(res.conflicts, '已设为不可预约');
+        cal.unselect();
+        refresh();
+        panelDays([date]);
+      } catch (err) { if (err.code !== 'AUTH') msg($('r-msg'), 'error', esc(err.message)); }
+    });
+    bindBookForm();
+  }
+
+  /** 点了某个事件 */
+  function panelEvent(id) {
+    const ev = cal.getEventById(id);
+    if (!ev) return;
+    const p = ev.extendedProps;
+    st.panel = () => { if (cal.getEventById(id)) panelEvent(id); else panelDays([p.b ? p.b.date : p.block.date]); };
+    const date = p.b ? p.b.date : p.block.date;
+    let html = '<h2>' + EW.zhDate(date) + '</h2>';
+    if (p.kind === 'bk') html += '<p class="sub">拖动日历上的预约可以改时间，拉下边缘可以改时长</p>' + bookingCard(p.b);
+    if (p.kind === 'blk') html += '<p class="sub">可以直接在日历上拖动或拉长</p>' + blockCard(p.block);
+    if (p.kind === 'ext') html += '<p class="sub">这是直接在 Google 日历里加的事件，也会挡掉这段时间。要修改请到 Google 日历。</p>' + bookingCard(p.b);
+    html += '<div class="actions-row"><button type="button" class="btn secondary small" id="back-day">看这一天的全部安排</button></div>';
+    $('day-panel').innerHTML = html;
+    $('back-day').addEventListener('click', () => { markSelected(''); panelDays([date]); });
+  }
+
+  function bindBookForm() {
+    const f = $('book-form');
+    if (!f) return;
+    f.addEventListener('submit', async e => {
+      e.preventDefault();
+      try {
+        const b = await api('adminBook', {
+          date: f.dataset.date, typeId: $('ab-type').value, time: $('ab-time').value, name: $('ab-name').value,
+          phone: $('ab-phone').value, email: $('ab-email').value, notify: $('ab-notify').checked, force: $('ab-force').checked
+        });
+        flash('ok', '已为 ' + b.name + ' 预约 ' + b.date + ' ' + b.time);
+        cal.unselect();
+        st.panel = () => panelDays([b.date]);
+        refresh();
+      } catch (err) {
+        if (err.code !== 'AUTH') msg($('ab-msg'), 'error', esc(err.message));
+      }
+    });
+  }
+
+  $('day-panel').addEventListener('click', async e => {
+    const unblock = e.target.closest('[data-unblock]');
+    if (unblock) {
+      try {
+        await api('removeBlock', { id: unblock.dataset.unblock, date: unblock.dataset.date });
+        flash('ok', '已恢复可预约');
+        st.panel = () => panelDays([unblock.dataset.date]);
+        refresh();
+      } catch (err) { if (err.code !== 'AUTH') flash('error', err.message); }
+    }
+    const cancel = e.target.closest('[data-cancel]');
+    if (cancel) openCancel(st.data.bookings.filter(b => b.id === cancel.dataset.cancel)[0]);
+  });
+
+  /* ── 拖动改期确认 ── */
+  let moving = null;
+  function openMove(b, date, time, duration, revert) {
+    moving = { b: b, date: date, time: time, duration: duration, revert: revert, force: false, done: false };
+    const end = EW.toMin(time) + duration;
+    $('md-text').innerHTML = '<strong>' + esc(b.name) + '</strong> · ' + esc(b.typeName) + '<br>' +
+      '原来：' + EW.zhDate(b.date) + ' ' + b.time + '–' + b.end + '<br>' +
+      '改为：<strong>' + EW.zhDate(date) + ' ' + time + '–' + EW.pad(Math.floor(end / 60)) + ':' + EW.pad(end % 60) + '</strong>' +
+      (duration !== b.duration ? '（时长 ' + b.duration + ' → ' + duration + ' 分钟）' : '');
+    $('md-notify').checked = !!b.email;
+    $('md-notify').disabled = !b.email;
+    $('md-confirm').textContent = '确认改期';
+    msg($('md-error'), '', '');
+    $('move-dialog').showModal();
+  }
+  $('md-cancel').addEventListener('click', () => $('move-dialog').close());
+  $('move-dialog').addEventListener('close', () => { if (moving && !moving.done) moving.revert(); moving = null; });
+  $('md-confirm').addEventListener('click', async () => {
+    const m = moving;
+    if (!m) return;
+    $('md-confirm').disabled = true;
+    try {
+      await api('adminMove', { id: m.b.id, date: m.date, time: m.time, duration: m.duration, notify: $('md-notify').checked, force: m.force });
+      m.done = true;
+      $('move-dialog').close();
+      flash('ok', '已把 ' + m.b.name + ' 的预约改到 ' + m.date + ' ' + m.time + ($('md-notify').checked ? '，已发邮件通知' : ''));
+      st.panel = () => panelDays([m.date]);
+      refresh();
+    } catch (err) {
+      if (err.code === 'CONFLICT') {
+        m.force = true;
+        msg($('md-error'), 'warn', esc(err.message) + ' 仍要改，请再点一次“仍然改期”。');
+        $('md-confirm').textContent = '仍然改期';
+      } else if (err.code !== 'AUTH') msg($('md-error'), 'error', esc(err.message));
+    } finally {
+      $('md-confirm').disabled = false;
+    }
+  });
+
+  /* ── 取消预约 ── */
+  let cancelling = null;
+  function openCancel(b) {
+    if (!b) return;
+    cancelling = b;
+    $('cd-text').textContent = b.date + ' ' + b.time + ' · ' + b.name + ' · ' + b.typeName;
+    $('cd-reason').value = '';
+    $('cd-notify').checked = !!b.email;
+    $('cd-notify').disabled = !b.email;
+    msg($('cd-error'), '', '');
+    $('cancel-dialog').showModal();
+  }
+  $('cd-keep').addEventListener('click', () => $('cancel-dialog').close());
+  $('cancel-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      await api('adminCancel', { id: cancelling.id, reason: $('cd-reason').value, notify: $('cd-notify').checked });
+      $('cancel-dialog').close();
+      flash('ok', '已取消 ' + cancelling.name + ' 的预约' + ($('cd-notify').checked ? '，已发邮件通知' : ''));
+      if (!$('tab-list').hidden) loadList(); else refresh();
+    } catch (err) {
+      if (err.code !== 'AUTH') msg($('cd-error'), 'error', esc(err.message));
+    }
+  });
+
+  /* ── 预约列表 ── */
+  let listData = [];
+  async function loadList() {
+    $('list-table').innerHTML = '<div class="loading"><span class="spinner" aria-hidden="true"></span>加载中…</div>';
+    try {
+      const d = await api('adminData', { from: st.today, to: EW.addDays(st.today, 120) });
+      listData = d.bookings.filter(b => !b.external);
+      renderList();
+    } catch (err) { if (err.code !== 'AUTH') $('list-table').innerHTML = '<p class="notice error">' + esc(err.message) + '</p>'; }
+  }
+  function renderList() {
+    const q = $('search').value.trim().toLowerCase();
+    const rows = listData.filter(b => !q || [b.name, b.phone, b.email, b.id].join(' ').toLowerCase().indexOf(q) >= 0);
+    if (!rows.length) { $('list-table').innerHTML = '<p class="hint">' + (q ? '没有找到' : '还没有预约') + '</p>'; return; }
+    $('list-table').innerHTML = '<table><thead><tr><th>日期</th><th>时间</th><th>类型</th><th>病人</th><th>电话</th><th>邮箱</th><th>来源</th><th><span class="visually-hidden">操作</span></th></tr></thead><tbody>' +
+      rows.map(b => '<tr><td>' + EW.zhDate(b.date) + '</td><td>' + b.time + '–' + b.end + '</td><td>' + esc(b.typeName) + '</td><td>' + esc(b.name) +
+        '</td><td>' + esc(b.phone) + '</td><td>' + esc(b.email) + '</td><td>' + (b.source === 'clinic' ? '诊所代约' : '网站') +
+        '</td><td><button type="button" class="btn danger secondary small" data-cancel="' + esc(b.id) + '">取消</button></td></tr>').join('') + '</tbody></table>';
+  }
+  $('search').addEventListener('input', renderList);
+  $('list-table').addEventListener('click', e => {
+    const c = e.target.closest('[data-cancel]');
+    if (c) openCancel(listData.filter(b => b.id === c.dataset.cancel)[0]);
+  });
+
+  /* ── 导入排班表 ── */
+  const HEAD = { date: /日期|date/i, start: /开始|上班|start|from|begin/i, end: /结束|下班|end|to\b|finish/i, note: /备注|班次|note|shift|remark/i };
+
+  function excelDate(v) {
+    if (typeof v === 'number' && v > 20000 && v < 80000) {
+      const d = new Date(Date.UTC(1899, 11, 30) + Math.round(v) * 86400000);
+      return EW.ymd(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+    }
+    const s = String(v == null ? '' : v).trim();
+    if (!s) return '';
+    let m = /^(\d{4})\s*[-/.年]\s*(\d{1,2})\s*[-/.月]\s*(\d{1,2})/.exec(s);
+    if (m) return valid(+m[1], +m[2], +m[3]);
+    m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(s);   // 美国写法 月/日/年
+    if (m) return valid(m[3].length === 2 ? 2000 + +m[3] : +m[3], +m[1], +m[2]);
+    const t = Date.parse(s);
+    if (!isNaN(t) && /[a-z]/i.test(s)) { const d = new Date(t); return valid(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
+    return null;
+  }
+  function valid(y, m, d) {
+    if (m < 1 || m > 12 || d < 1 || d > EW.daysInMonth(y, m)) return null;
+    return EW.ymd(y, m, d);
+  }
+  function excelTime(v) {
+    if (v === '' || v == null) return '';
+    if (typeof v === 'number') {
+      const mins = Math.round((v % 1) * 1440);
+      return EW.pad(Math.floor(mins / 60) % 24) + ':' + EW.pad(mins % 60);
+    }
+    const s = String(v).trim();
+    if (!s || /全天|all\s*day/i.test(s)) return '';
+    const m = /^(\d{1,2})(?::|：)?(\d{2})?\s*(am|pm|上午|下午)?$/i.exec(s);
+    if (!m) return null;
+    let h = +m[1];
+    const min = +(m[2] || 0), ap = (m[3] || '').toLowerCase();
+    if ((ap === 'pm' || ap === '下午') && h < 12) h += 12;
+    if ((ap === 'am' || ap === '上午') && h === 12) h = 0;
+    if (h > 23 || min > 59) return null;
+    return EW.pad(h) + ':' + EW.pad(min);
+  }
+
+  function parseRows(rows) {
+    let col = { date: 0, start: 1, end: 2, note: 3 };
+    let startRow = 0;
+    for (let i = 0; i < Math.min(rows.length, 10); i++) {
+      const cells = rows[i].map(c => String(c));
+      const di = cells.findIndex(c => HEAD.date.test(c));
+      if (di >= 0) {
+        col = { date: di, start: cells.findIndex(c => HEAD.start.test(c)), end: cells.findIndex(c => HEAD.end.test(c)), note: cells.findIndex(c => HEAD.note.test(c)) };
+        startRow = i + 1;
+        break;
+      }
+    }
+    const out = [];
+    rows.slice(startRow).forEach((r, i) => {
+      const raw = r[col.date];
+      if (raw === '' || raw == null) return;
+      let start = col.start >= 0 ? excelTime(r[col.start]) : '';
+      let end = col.end >= 0 ? excelTime(r[col.end]) : '';
+      // 一个格子里写 "7:00-15:30" 的情况
+      if (col.start >= 0 && start === null && /[-–~至]/.test(String(r[col.start]))) {
+        const parts = String(r[col.start]).split(/[-–~至]/);
+        start = excelTime(parts[0]); end = excelTime(parts[1]);
+      }
+      const date = excelDate(raw);
+      const e = { line: startRow + i + 1, raw: String(raw), date: date, start: start, end: end, note: col.note >= 0 ? String(r[col.note] || '').trim() : '' };
+      if (!date) e.problem = '看不懂这个日期';
+      else if (start === null || end === null) e.problem = '看不懂时间';
+      else if ((start && !end) || (!start && end)) e.problem = '开始和结束时间要一起填';
+      else if (start && start >= end) e.problem = '结束要晚于开始';
+      out.push(e);
+    });
+    return out;
+  }
+
+  $('file').addEventListener('change', async () => {
+    const f = $('file').files[0];
+    $('import-preview').innerHTML = '';
+    st.entries = null;
+    if (!f) return;
+    if (!window.XLSX && document.readyState !== 'complete') await new Promise(r => window.addEventListener('load', r, { once: true }));
+    if (!window.XLSX) { msg($('import-msg'), 'error', '读取 Excel 的组件没加载成功（需要联网）。可以先把表格另存为 CSV 再试。'); return; }
+    msg($('import-msg'), 'info', '正在读取 ' + esc(f.name) + '…');
+    try {
+      const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: '' });
+      const entries = parseRows(rows);
+      if (!entries.length) { msg($('import-msg'), 'error', '表里没有读到日期。请用模板的格式：第一列日期。'); return; }
+      const bad = entries.filter(e => e.problem);
+      const today = st.today;
+      let summary = null;
+      const good = entries.filter(e => !e.problem);
+      if (good.length) summary = await api('previewImport', { entries: good });
+      renderPreview(entries, summary, today);
+      st.entries = bad.length ? null : good;
+      if (bad.length) msg($('import-msg'), 'error', '有 ' + bad.length + ' 行看不懂（下表红色），改好后重新选择文件。');
+      else msg($('import-msg'), '', '');
+    } catch (err) {
+      if (err.code !== 'AUTH') msg($('import-msg'), 'error', '读取失败：' + esc(err.message));
+    }
+  });
+
+  function renderPreview(entries, s, today) {
+    let html = '';
+    if (s) {
+      html += '<p class="notice info">将把 <strong>' + s.count + ' 天</strong>设为不可预约' + (s.count ? '（' + s.from + ' 到 ' + s.to + '）' : '') +
+        (s.ignoredPast ? '；' + s.ignoredPast + ' 行是过去的日期，会跳过' : '') +
+        (s.replaced ? '；会替换上次导入的 ' + s.replaced + ' 条' : '') + '。</p>';
+      if (s.conflicts.length) {
+        html += '<div class="notice warn"><div>这些<strong>已有预约</strong>落在新的工作时间里，导入后不会自动取消，请自行联系病人改期：<ul style="margin:6px 0 0">' +
+          s.conflicts.map(c => '<li>' + EW.zhDate(c.date) + ' ' + c.time + ' · ' + esc(c.name) + ' · ' + esc(c.typeName) + '</li>').join('') + '</ul></div></div>';
+      }
+    }
+    html += '<div class="table-wrap"><table><thead><tr><th>行</th><th>日期</th><th>星期</th><th>时间</th><th>备注</th><th>状态</th></tr></thead><tbody>' +
+      entries.slice(0, 500).map(e => {
+        const past = e.date && e.date < today;
+        return '<tr class="' + (e.problem ? 'bad' : past ? 'past' : '') + '"><td>' + e.line + '</td><td>' + esc(e.date || e.raw) + '</td><td>' + (e.date ? ZH[EW.weekday(e.date)] : '') +
+          '</td><td>' + (e.start ? e.start + '–' + e.end : '全天') + '</td><td>' + esc(e.note) + '</td><td>' +
+          (e.problem ? '<span class="status-bad">⚠ ' + e.problem + '</span>' : past ? '过去，跳过' : '✓') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+    if (s && !entries.some(e => e.problem) && s.count) {
+      html += '<button type="button" class="btn" id="do-import" style="margin-top:16px">确认导入 ' + s.count + ' 天</button>';
+    }
+    $('import-preview').innerHTML = html;
+    const btn = $('do-import');
+    if (btn) btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        const r = await api('importBlocks', { entries: st.entries });
+        msg($('import-msg'), 'ok', '导入完成：新增 ' + r.added + ' 条，替换旧的 ' + r.removed + ' 条。去“日历”看看。');
+        $('import-preview').innerHTML = '';
+        $('file').value = '';
+      } catch (err) {
+        if (err.code !== 'AUTH') msg($('import-msg'), 'error', esc(err.message));
+        btn.disabled = false;
+      }
+    });
+  }
+
+  /* ── 设置 ── */
+  const NUMS = ['slotStep', 'buffer', 'minNoticeHours', 'maxAdvanceDays', 'cancelNoticeHours'];
+  const TEXTS = ['clinicName', 'clinicPhone', 'clinicAddress', 'bookingPageUrl', 'notifyEmail'];
+
+  function renderSettings() {
+    const s = st.settings;
+    if (!s) return;
+    TEXTS.forEach(k => { $('s-' + k).value = s[k] || ''; });
+    NUMS.forEach(k => { $('s-' + k).value = s[k]; });
+    $('s-usePrimaryCalendar').checked = !!s.usePrimaryCalendar;
+    $('hours-editor').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(d => {
+      const list = s.weeklyHours[d] || [];
+      return '<div class="hours-row" data-day="' + d + '"><label class="check"><input type="checkbox" class="open"' + (list.length ? ' checked' : '') + '><span><strong>' + ZH[d] + '</strong></span></label>' +
+        '<div class="intervals">' + (list.length ? list : []).map(intervalHtml).join('') +
+        (list.length ? '' : '<span class="hint">不出诊</span>') +
+        (list.length ? '<div><button type="button" class="link-btn add-iv">＋ 加一段</button></div>' : '') + '</div></div>';
+    }).join('');
+    $('types-editor').innerHTML = s.visitTypes.map(typeHtml).join('');
+    msg($('settings-msg'), '', '');
+  }
+
+  function intervalHtml(iv) {
+    return '<div class="interval"><input type="time" class="iv-start" value="' + iv.start + '" aria-label="开始"> 到 <input type="time" class="iv-end" value="' + iv.end + '" aria-label="结束">' +
+      ' <button type="button" class="link-btn del-iv">删除</button></div>';
+  }
+  function typeHtml(t) {
+    const uid = t.id;
+    return '<div class="type-card" data-id="' + esc(t.id) + '"><div class="grid-2">' +
+      '<div class="field"><label for="tn-' + uid + '">名称（病人看到）</label><input id="tn-' + uid + '" class="t-name" type="text" value="' + esc(t.name) + '"></div>' +
+      '<div class="row"><div class="field"><label for="td-' + uid + '">时长（分钟）</label><input id="td-' + uid + '" class="t-dur" type="number" min="5" max="480" value="' + t.duration + '"></div>' +
+      '<div class="field"><label for="tm-' + uid + '">方式</label><select id="tm-' + uid + '" class="t-mode"><option value="in-person"' + (t.mode !== 'telehealth' ? ' selected' : '') + '>到诊所</option><option value="telehealth"' + (t.mode === 'telehealth' ? ' selected' : '') + '>远程视频</option></select></div></div></div>' +
+      '<div class="field"><label for="tx-' + uid + '">说明（病人看到）</label><textarea id="tx-' + uid + '" class="t-desc">' + esc(t.description) + '</textarea></div>' +
+      '<div class="row" style="align-items:center;justify-content:space-between"><label class="check"><input type="checkbox" class="t-active"' + (t.active ? ' checked' : '') + '><span>开放预约</span></label>' +
+      '<button type="button" class="btn danger secondary small del-type">删除这个类型</button></div></div>';
+  }
+
+  $('hours-editor').addEventListener('click', e => {
+    const row = e.target.closest('.hours-row');
+    if (!row) return;
+    if (e.target.closest('.add-iv')) {
+      const ivs = row.querySelectorAll('.interval');
+      const last = ivs[ivs.length - 1];
+      const start = last ? last.querySelector('.iv-end').value : '09:00';
+      e.target.closest('div').insertAdjacentHTML('beforebegin', intervalHtml({ start: start, end: start < '20:00' ? EW.pad(Math.min(23, Number(start.slice(0, 2)) + 2)) + ':00' : '23:00' }));
+    }
+    if (e.target.closest('.del-iv')) {
+      e.target.closest('.interval').remove();
+      if (!row.querySelector('.interval')) { row.querySelector('.open').checked = false; rebuildDay(row, []); }
+    }
+  });
+  $('hours-editor').addEventListener('change', e => {
+    if (!e.target.classList.contains('open')) return;
+    const row = e.target.closest('.hours-row');
+    rebuildDay(row, e.target.checked ? [{ start: '09:00', end: '17:00' }] : []);
+  });
+  function rebuildDay(row, list) {
+    row.querySelector('.intervals').innerHTML = list.map(intervalHtml).join('') +
+      (list.length ? '<div><button type="button" class="link-btn add-iv">＋ 加一段</button></div>' : '<span class="hint">不出诊</span>');
+  }
+
+  $('add-type').addEventListener('click', () => {
+    const id = 't' + Date.now().toString(36);
+    $('types-editor').insertAdjacentHTML('beforeend', typeHtml({ id: id, name: '', duration: 30, mode: 'in-person', description: '', active: true }));
+    $('tn-' + id).focus();
+  });
+  $('types-editor').addEventListener('click', e => {
+    const del = e.target.closest('.del-type');
+    if (del && confirm('删除这个看诊类型？已有的预约不受影响。')) del.closest('.type-card').remove();
+  });
+
+  function collectSettings() {
+    const s = {};
+    TEXTS.forEach(k => { s[k] = $('s-' + k).value.trim(); });
+    NUMS.forEach(k => { s[k] = Number($('s-' + k).value); });
+    s.usePrimaryCalendar = $('s-usePrimaryCalendar').checked;
+    s.weeklyHours = {};
+    document.querySelectorAll('.hours-row').forEach(row => {
+      s.weeklyHours[row.dataset.day] = Array.from(row.querySelectorAll('.interval')).map(iv => ({
+        start: iv.querySelector('.iv-start').value, end: iv.querySelector('.iv-end').value
+      }));
+    });
+    s.visitTypes = Array.from(document.querySelectorAll('.type-card')).map(c => ({
+      id: c.dataset.id, name: c.querySelector('.t-name').value, duration: Number(c.querySelector('.t-dur').value),
+      mode: c.querySelector('.t-mode').value, description: c.querySelector('.t-desc').value, active: c.querySelector('.t-active').checked
+    }));
+    return s;
+  }
+
+  $('settings-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      st.settings = await api('saveSettings', { settings: collectSettings() });
+      if (cal) cal.setOption('businessHours', businessHours(st.settings));
+      renderSettings();
+      msg($('settings-msg'), 'ok', '已保存。病人预约页刷新后生效。');
+    } catch (err) {
+      if (err.code !== 'AUTH') msg($('settings-msg'), 'error', esc(err.message));
+    }
+  });
+
+  $('pw-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      st.token = (await api('changePassword', { oldPassword: $('pw-old').value, newPassword: $('pw-new').value })).token;
+      EW.storage.set('ew_admin_token', st.token);
+      $('pw-old').value = $('pw-new').value = '';
+      msg($('pw-msg'), 'ok', '密码已修改');
+    } catch (err) {
+      if (err.code !== 'AUTH') msg($('pw-msg'), 'error', esc(err.message));
+    }
+  });
+
+  $('clear-data').addEventListener('click', async () => {
+    if (!confirm('确定清空所有预约和不可预约记录？')) return;
+    try {
+      const r = await api('clearTestData');
+      flash('ok', '已清空，删除了 ' + r.deletedBookings + ' 个预约');
+    } catch (err) { if (err.code !== 'AUTH') flash('error', err.message); }
+  });
+  $('reset-demo').addEventListener('click', () => {
+    if (!confirm('重置整个演示？所有数据、设置和密码都会恢复初始状态。')) return;
+    window.EWDemo.resetAll();
+    EW.storage.remove('ew_admin_token');
+    location.reload();
+  });
+
+  /* ── 动态与邮件 ── */
+  async function renderActivity() {
+    try {
+      const d = await api('adminData', { from: st.today, to: st.today });
+      $('log').innerHTML = d.log.length ? d.log.map(l => '<li><time>' + esc(l.at) + '</time>' + esc(l.msg) + '</li>').join('') : '<li class="hint">还没有动态</li>';
+    } catch (err) { if (err.code !== 'AUTH') flash('error', err.message); }
+    if (!EW.DEMO) {
+      $('outbox').innerHTML = '<p class="hint">正式模式下邮件真实发出，请到收件箱查看。</p>';
+      return;
+    }
+    const box = window.EWDemo.outbox();
+    $('outbox').innerHTML = box.length ? box.map((m, i) =>
+      '<details class="mail"><summary><strong>' + esc(m.subject) + '</strong><span class="hint">→ ' + esc(m.to) + ' · ' + new Date(m.at).toLocaleString() +
+      (m.attachments.length ? ' · 📎 ' + esc(m.attachments.join(', ')) : '') + '</span></summary>' +
+      (m.html ? '<iframe sandbox title="邮件内容" data-i="' + i + '"></iframe>' : '<pre>' + esc(m.text) + '</pre>') + '</details>').join('')
+      : '<p class="hint">还没有邮件。去病人预约页约一个试试。</p>';
+    $('outbox').querySelectorAll('iframe').forEach(f => { f.srcdoc = box[Number(f.dataset.i)].html; });
+  }
+
+  /* ── 启动 ── */
+  if (st.token) enter(); else logout('');
+})();
+</script>
+</body>
+</html>

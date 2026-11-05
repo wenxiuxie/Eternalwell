@@ -1,0 +1,30 @@
+[build]
+  publish = "site"
+
+# The live site is v7 (English at /v7/, Chinese at /v7/zh/). Older design versions stay at /versions/.
+[[redirects]]
+  from = "/"
+  to = "/v7/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/zh"
+  to = "/v7/zh/"
+  status = 302
+
+[[headers]]
+  for = "/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/v7/assets/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

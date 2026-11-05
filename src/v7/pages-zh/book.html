@@ -1,0 +1,91 @@
+@title 在线预约 | EternaWell Medicine
+@desc 在网上预约免费的 20 分钟咨询，无需注册账号；也可以致电或发短信 (206) 507-2504。
+@shape 0
+@class inner book-page
+@field 0
+<main id="main">
+  <section class="page-hero compact">
+    <div class="wrap">
+      <div class="content">
+        <span class="eyebrow">立即预约</span>
+        <h1>在网上<em>预约就诊。</em></h1>
+        <p class="lede">无需注册账号。选择看诊类型和时间，填写姓名、电话和邮箱即可。您会收到一封确认邮件，里面有可以改期或取消的私人链接。</p>
+        <ul class="badges" aria-label="须知">
+          <li class="pill pill-strong">{{CHECK}} 可用 FSA / HSA 支付</li>
+          <li class="pill">{{CHECK}} 首次 20 分钟咨询免费</li>
+          <li class="pill">{{CHECK}} 面诊与视频问诊</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight" aria-labelledby="booking-h">
+    <div class="wrap">
+      <h2 id="booking-h" class="visually-hidden">在线预约</h2>
+      <div class="booking-frame">
+        <iframe id="booking-iframe" title="在线预约：选择看诊类型、日期和时间" src="{{ROOT}}/booking/web/booking.html?lang=zh" loading="eager"></iframe>
+        <noscript><p>在线预约需要开启 JavaScript。请致电或发短信 <a href="tel:{{PHONE_TEL}}">{{PHONE_DISPLAY}}</a>。</p></noscript>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight">
+    <div class="wrap">
+      <div class="options two-col" data-reveal>
+        <div>
+          <span class="eyebrow">想打电话？</span>
+          <a href="tel:{{PHONE_TEL}}" class="big">{{PHONE_DISPLAY}}</a>
+          <p>前台可以帮您预约，也可以解答问题。</p>
+        </div>
+        <div>
+          <span class="eyebrow">发短信预约</span>
+          <a href="sms:{{PHONE_TEL}}" class="big">{{PHONE_DISPLAY}}</a>
+          <p>发短信告诉我们您的姓名和方便联系的时间。请不要在短信里写病情。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band-dark section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">接下来</span>
+        <h2>您的<em>第一步。</em></h2>
+      </div>
+      <ol class="big-steps">
+        <li data-reveal><span class="n">01</span><b>在线预约</b><span class="d">在上面选个时间。无需账号、无注册费、无任何承诺。</span></li>
+        <li data-reveal><span class="n">02</span><b>免费 20 分钟咨询</b><span class="d">与医生面诊或视频交流，聊聊您的症状和目标，完全免费。</span></li>
+        <li data-reveal><span class="n">03</span><b>抽血化验与完整初诊</b><span class="d">全面化验并完成完整问诊，为您制定个性化治疗方案。</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta solo" data-reveal>
+        <span class="eyebrow">已经是我们的患者？</span>
+        <h2>登录<em>患者门户。</em></h2>
+        <p>老患者可以登录患者门户查看病历、填写表格和发送消息。预约不需要登录门户。</p>
+        <div class="actions">
+          <a href="{{PORTAL_URL}}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">打开患者门户 {{EXT}}<span class="visually-hidden">（在新标签页打开）</span></a>
+        </div>
+        <p class="cta-note"><a href="{{MAP_URL}}" target="_blank" rel="noopener noreferrer" lang="en">{{ADDRESS_1}}, {{ADDRESS_2}}</a></p>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+// 把私人改期/取消链接里的 ?b=…&t=… 传给预约组件；预约组件把高度告诉本页，框架不会自己出现滚动条
+(function () {
+  var f = document.getElementById('booking-iframe');
+  if (location.search) f.src = '{{ROOT}}/booking/web/booking.html?lang=zh&' + location.search.slice(1);
+  window.addEventListener('message', function (e) {
+    if (e.origin !== location.origin || e.source !== f.contentWindow || !e.data) return;
+    if (e.data.type === 'ew-height') f.style.height = e.data.h + 'px';
+    if (e.data.type === 'ew-scroll') {
+      var top = f.getBoundingClientRect().top + window.scrollY - 110;
+      window.scrollTo({ top: Math.max(0, top), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    }
+  });
+})();
+</script>

@@ -1,0 +1,92 @@
+@title Book an Appointment | EternaWell Medicine
+@desc Book your free 20-minute consultation online with no account or sign-up, or call or text (206) 507-2504.
+@shape 0
+@class inner book-page
+@field 0
+<main id="main">
+  <section class="page-hero compact">
+    <div class="wrap">
+      <div class="content">
+        <span class="eyebrow">Book now</span>
+        <h1>Book your visit <em>online.</em></h1>
+        <p class="lede">No account or sign-up needed. Choose a visit type and time, enter your name, phone and email, and you'll get a confirmation by email with a private link to reschedule or cancel.</p>
+        <ul class="badges" aria-label="Good to know">
+          <li class="pill pill-strong">{{CHECK}} FSA / HSA eligible</li>
+          <li class="pill">{{CHECK}} Free 20-minute first consult</li>
+          <li class="pill">{{CHECK}} In person &amp; telemedicine</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight" aria-labelledby="booking-h">
+    <div class="wrap">
+      <h2 id="booking-h" class="visually-hidden">Online booking</h2>
+      <div class="booking-frame">
+        <iframe id="booking-iframe" title="Online booking: choose a visit type, date and time" src="{{ROOT}}/booking/web/booking.html" loading="eager"></iframe>
+        <noscript><p>Online booking needs JavaScript. Please call or text <a href="tel:{{PHONE_TEL}}">{{PHONE_DISPLAY}}</a>.</p></noscript>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight">
+    <div class="wrap">
+      <div class="options two-col" data-reveal>
+        <div>
+          <span class="eyebrow">Prefer to call?</span>
+          <a href="tel:{{PHONE_TEL}}" class="big">{{PHONE_DISPLAY}}</a>
+          <p>Our front desk can book your visit and answer questions.</p>
+        </div>
+        <div>
+          <span class="eyebrow">Text to book</span>
+          <a href="sms:{{PHONE_TEL}}" class="big">{{PHONE_DISPLAY}}</a>
+          <p>Send us a text with your name and a good time to reach you. Please don't include medical details.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band-dark section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">What happens next</span>
+        <h2>Your first <em>steps.</em></h2>
+      </div>
+      <ol class="big-steps">
+        <li data-reveal><span class="n">01</span><b>Book online</b><span class="d">Pick a time above. No account, no sign-up fee, no commitment.</span></li>
+        <li data-reveal><span class="n">02</span><b>Free 20-minute consultation</b><span class="d">Meet with the doctor, in person or by telemedicine, to discuss your symptoms and goals at no charge.</span></li>
+        <li data-reveal><span class="n">03</span><b>Lab draw &amp; full initial consultation</b><span class="d">We draw comprehensive labs and complete a full consultation to build your personalized treatment plan.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="cta solo" data-reveal>
+        <span class="eyebrow">Already a patient?</span>
+        <h2>Visit the patient <em>portal.</em></h2>
+        <p>Existing patients can sign in to the patient portal for records, forms, and messages. You don't need the portal to book.</p>
+        <div class="actions">
+          <a href="{{PORTAL_URL}}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Open patient portal {{EXT}}<span class="visually-hidden"> (opens in a new tab)</span></a>
+        </div>
+        <p class="cta-note"><a href="{{MAP_URL}}" target="_blank" rel="noopener noreferrer">{{ADDRESS_1}}, {{ADDRESS_2}}</a></p>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+// Pass ?b=…&t=… (the private reschedule/cancel link) through to the booking widget,
+// and let the widget tell us its height so the frame never scrolls on its own.
+(function () {
+  var f = document.getElementById('booking-iframe');
+  if (location.search) f.src = '{{ROOT}}/booking/web/booking.html' + location.search;
+  window.addEventListener('message', function (e) {
+    if (e.origin !== location.origin || e.source !== f.contentWindow || !e.data) return;
+    if (e.data.type === 'ew-height') f.style.height = e.data.h + 'px';
+    if (e.data.type === 'ew-scroll') {
+      var top = f.getBoundingClientRect().top + window.scrollY - 110;
+      window.scrollTo({ top: Math.max(0, top), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    }
+  });
+})();
+</script>

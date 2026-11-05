@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book an Appointment — EternaWell Medicine</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .site-header { background: var(--surface); border-bottom: 1px solid var(--line); }
+  .site-header .inner { max-width: 1120px; margin: 0 auto; padding: 16px; display: flex; flex-wrap: wrap; gap: 4px 24px; align-items: baseline; justify-content: space-between; }
+  .brand { font-size: 20px; font-weight: 700; color: var(--primary); letter-spacing: .2px; }
+  .contact { color: var(--muted); font-size: 14px; }
+  .contact a { font-weight: 600; }
+  main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; }
+  .page-title { font-size: 28px; margin-bottom: 4px; }
+  .page-sub { color: var(--muted); margin: 0 0 20px; }
+
+  /* 一页式布局：类型 / 日历 / 时间 / 信息 */
+  .booker { padding: 24px; }
+  .sec-title { display: flex; align-items: center; gap: 10px; font-size: 17px; margin: 0 0 12px; }
+  .sec-title .n { width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: #fff; display: grid; place-items: center; font-size: 14px; flex: none; }
+  .sec-title .n.done { background: var(--ok); }
+  .sec-title .n.done span { display: none; }
+  .sec-title .n.done::after { content: "✓"; }
+
+  .types { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; border: 0; }
+  .type-opt { position: relative; flex: 1 1 200px; max-width: 300px; }
+  @media (max-width: 640px) { .type-opt { max-width: none; } }
+  .type-opt label { height: 100%; }
+  .type-opt input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .type-opt label {
+    display: flex; flex-direction: column; gap: 2px; min-width: 200px; padding: 10px 16px 10px 40px;
+    border: 1.5px solid var(--field-line); border-radius: 12px; background: var(--surface); cursor: pointer; position: relative;
+  }
+  .type-opt label::before {
+    content: ""; position: absolute; left: 14px; top: 14px; width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid var(--field-line); background: #fff;
+  }
+  .type-opt label:hover { border-color: var(--primary); }
+  .type-opt input:checked + label { border-color: var(--primary); background: var(--primary-weak); box-shadow: inset 0 0 0 1px var(--primary); }
+  .type-opt input:checked + label::before { border-color: var(--primary); background: radial-gradient(circle, var(--primary) 0 4px, #fff 5px); }
+  .type-opt input:focus-visible + label { box-shadow: var(--focus); }
+  .type-name { font-weight: 700; }
+  .type-meta { font-size: 14px; color: var(--muted); }
+  .type-desc { color: var(--muted); font-size: 15px; margin: 10px 0 0; min-height: 1.5em; }
+  .locked-type { padding: 10px 16px; border-radius: 10px; background: var(--primary-weak); display: inline-block; }
+
+  .grid3 { display: grid; grid-template-columns: 340px 230px minmax(0, 1fr); gap: 28px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line); align-items: start; }
+  @media (max-width: 1040px) { .grid3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .col-form { grid-column: 1 / -1; } }
+  @media (max-width: 640px) { .grid3 { grid-template-columns: 1fr; gap: 24px; } }
+
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .cal-head h3 { font-size: 16px; }
+  .cal-nav { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--field-line); background: var(--surface); color: var(--primary); font-size: 20px; cursor: pointer; }
+  .cal-nav:disabled { opacity: .35; cursor: not-allowed; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-dow { text-align: center; font-size: 12px; font-weight: 600; color: var(--muted); padding: 4px 0; }
+  .cal-day { aspect-ratio: 1; min-height: 38px; display: grid; place-items: center; border-radius: 10px; font-size: 15px; position: relative; }
+  .cal-day.off { color: var(--faint); }
+  .cal-day.off span { text-decoration: line-through; text-decoration-thickness: 1.5px; text-decoration-color: var(--faint); }
+  button.cal-day { border: 1.5px solid var(--primary-line); background: var(--primary-weak); color: var(--primary-dark); font: inherit; font-weight: 700; cursor: pointer; }
+  button.cal-day::after { content: ""; position: absolute; bottom: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--primary); }
+  button.cal-day:hover { border-color: var(--primary); }
+  button.cal-day[aria-pressed=true] { background: var(--primary); border-color: var(--primary-dark); color: #fff; }
+  button.cal-day[aria-pressed=true]::after { background: #fff; }
+  .cal-day.today span { text-decoration: underline; text-underline-offset: 3px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-top: 10px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 18px; height: 18px; border-radius: 5px; display: inline-grid; place-items: center; font-size: 11px; }
+  .sw.avail { background: var(--primary-weak); border: 1.5px solid var(--primary-line); }
+  .sw.avail::after { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--primary); }
+  .sw.off { color: var(--faint); text-decoration: line-through; }
+  .tz-note { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+
+  .slots h3 { font-size: 16px; margin-bottom: 2px; }
+  /* 两列排开，不加滚动条：一天最多十几个时段，全部直接显示 */
+  .slot-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-top: 10px; }
+  .slot-sep { grid-column: 1 / -1; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 4px; }
+  .slot { min-height: 44px; border: 1.5px solid var(--primary); border-radius: 10px; background: var(--surface); color: var(--primary); font: inherit; font-weight: 600; cursor: pointer; }
+  .slot:hover { background: var(--primary-weak); }
+  .slot[aria-pressed=true] { background: var(--primary); color: #fff; }
+  .slot[aria-pressed=true]::before { content: "✓ "; }
+  .empty { color: var(--muted); padding: 14px; border: 1.5px dashed var(--line); border-radius: 10px; font-size: 15px; }
+
+  .col-form .when-box { padding: 12px 14px; border-radius: 10px; background: var(--bg); border: 1.5px dashed var(--line); margin-bottom: 16px; color: var(--muted); }
+  .col-form .when-box.set { background: var(--primary-weak); border: 1.5px solid var(--primary-line); color: var(--ink); }
+  .when-box strong { display: block; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  @media (max-width: 480px) { .two { grid-template-columns: 1fr; } }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .privacy { font-size: 14px; color: var(--muted); margin: -6px 0 16px; }
+  .privacy summary { cursor: pointer; color: var(--primary); font-weight: 600; }
+  .submit { width: 100%; min-height: 52px; font-size: 17px; }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+
+  .result { padding: 28px; max-width: 760px; }
+  .done-head { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; }
+  .done-icon { width: 56px; height: 56px; border-radius: 50%; background: var(--ok-weak); border: 2px solid var(--ok); display: grid; place-items: center; flex: none; }
+  .done-icon.cancel { background: var(--block-weak); border-color: var(--block); }
+  .info-list { display: grid; grid-template-columns: max-content 1fr; gap: 10px 20px; margin: 0 0 20px; }
+  .info-list dt { color: var(--muted); }
+  .info-list dd { margin: 0; font-weight: 600; }
+  @media (max-width: 520px) { .info-list { grid-template-columns: 1fr; gap: 2px; } .info-list dd { margin-bottom: 10px; } }
+  .manage-link { word-break: break-all; font-size: 14px; background: var(--bg); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); }
+  /* 嵌入官网页面时（iframe）：去掉自带页头，背景透明，宽度跟随官网 */
+  html.embed body { background: transparent; }
+  html.embed .site-header { display: none; }
+  html.embed main { max-width: none; padding: 0 0 8px; }
+  html.embed .page-title, html.embed .page-sub { display: none; }
+
+  /* 中英文：富文本段落两种语言都写在页面里，按语言显示一种 */
+  html[lang|="zh"] .en-only, html:not([lang|="zh"]) .zh-only { display: none; }
+  .check span { font-weight: 400; }
+  html[lang|="zh"] body { font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif; }
+
+  /* 配色（与官网四套配色对应；文字对比度都 ≥ 4.5:1，边框 ≥ 3:1） */
+  html[data-theme="sky"] { --bg: #F5F9FF; --ink: #0F2540; --muted: #3A516B; --faint: #5B6E85; --primary: #0A5CAD; --primary-dark: #084A8C; --primary-weak: #E6F0FB; --primary-line: #9CC3EC; --field-line: #6B819A; --line: #D6E3F2; --focus: 0 0 0 3px #FFFFFF, 0 0 0 5px #0A5CAD; }
+  html[data-theme="navy"] { --bg: #FAF8F4; --ink: #1B2433; --muted: #4A5263; --faint: #646B79; --primary: #1F3A5F; --primary-dark: #152A46; --primary-weak: #EDF1F7; --primary-line: #A9B7CB; --field-line: #7A8293; --line: #E4E0D8; --focus: 0 0 0 3px #FFFFFF, 0 0 0 5px #1F3A5F; }
+  html[data-theme="noir"] { --bg: #F7F5F1; --ink: #171614; --muted: #4D4943; --faint: #69645C; --primary: #1B1A18; --primary-dark: #000000; --primary-weak: #EFE9DF; --primary-line: #CDB995; --field-line: #7C766D; --line: #E6E1D8; --focus: 0 0 0 3px #FFFFFF, 0 0 0 5px #1B1A18; }
+  html[data-theme="stone"] { --bg: #F3F0EB; --ink: #2A2420; --muted: #57504A; --faint: #6C645D; --primary: #4A3A2E; --primary-dark: #33271E; --primary-weak: #EBE4DA; --primary-line: #C4AF96; --field-line: #857B72; --line: #E4DDD3; --focus: 0 0 0 3px #FFFFFF, 0 0 0 5px #4A3A2E; }
+  html[data-theme="clay"] { --bg: #FBF8F5; --ink: #2B2321; --muted: #5A4B47; --faint: #6E5F5A; --primary: #8E4B3D; --primary-dark: #713A2F; --primary-weak: #F5E9E4; --primary-line: #D9B3A7; --field-line: #8A7873; --line: #EADFD8; --focus: 0 0 0 3px #FFFFFF, 0 0 0 5px #8E4B3D; }
+  html[data-theme="sage"] { --bg: #F6F8F5; --ink: #1C2B24; --muted: #45564D; --faint: #5F6E66; --primary: #2E6A50; --primary-dark: #22513D; --primary-weak: #E5EFE8; --primary-line: #9EC2AE; --field-line: #6F8378; --line: #DCE5DF; --focus: 0 0 0 3px #FFFFFF, 0 0 0 5px #2E6A50; }
+</style>
+<script>
+  // 被官网 /book/ 页用 iframe 嵌入时进入嵌入模式
+  window.EW_EMBED = window.self !== window.top;
+  if (window.EW_EMBED) document.documentElement.classList.add('embed');
+  // 语言：?lang=zh 显示中文（官网中文版的预约页会带上）
+  window.EW_LANG = new URLSearchParams(location.search).get('lang') === 'zh' ? 'zh' : 'en';
+  if (window.EW_LANG === 'zh') { document.documentElement.lang = 'zh-Hans'; document.title = '在线预约 — EternaWell Medicine'; }
+  // 配色：跟官网"预览设置"里选的一致（同一个网址下共用 localStorage）
+  (function () {
+    function apply() {
+      var t = 'noir';
+      try { t = localStorage.getItem('ew-theme') || 'noir'; } catch (e) { /* 忽略 */ }
+      document.documentElement.dataset.theme = t;
+    }
+    apply();
+    window.addEventListener('storage', function (e) { if (e.key === 'ew-theme') apply(); });
+  })();
+</script>
+</head>
+<body>
+<div id="demo-banner" class="demo-banner" hidden>
+  演示模式：数据只存在本浏览器，邮件不会真的发出（可在 <a href="admin.html" target="_blank" rel="noopener">医生后台</a> →“动态与邮件”里查看）
+</div>
+<header class="site-header">
+  <div class="inner">
+    <div class="brand" id="clinic-name">EternaWell Medicine</div>
+    <div class="contact"><span data-zh="有问题？请致电或发短信：">Questions? Call or text</span> <a id="clinic-phone" href="tel:2065072504">206-507-2504</a></div>
+  </div>
+</header>
+
+<main id="main">
+  <h1 class="page-title" id="page-title" tabindex="-1" data-zh="在线预约">Book an appointment</h1>
+  <p class="page-sub" id="page-sub" data-zh="无需注册。选择看诊类型和时间，再填写联系方式即可。">No account needed. Pick a visit type and time, then enter your contact details.</p>
+  <div id="status" role="status" aria-live="polite"></div>
+
+  <!-- 预约（一页完成） -->
+  <section class="card booker" id="view-book" hidden aria-label="Booking form" data-zh-label="预约表单">
+    <div id="type-section">
+      <h2 class="sec-title" id="h-type"><span class="n" id="n1"><span>1</span></span><span data-zh="看诊类型">Visit type</span></h2>
+      <fieldset class="types" id="types" aria-labelledby="h-type"></fieldset>
+      <p class="type-desc" id="type-desc" aria-live="polite"></p>
+    </div>
+
+    <div class="grid3">
+      <div>
+        <h2 class="sec-title" id="h-date"><span class="n" id="n2"><span>2</span></span><span data-zh="日期">Date</span></h2>
+        <div class="cal-head">
+          <button type="button" class="cal-nav" id="prev-month" aria-label="Previous month" data-zh-label="上个月">‹</button>
+          <h3 id="month-title" aria-live="polite"></h3>
+          <button type="button" class="cal-nav" id="next-month" aria-label="Next month" data-zh-label="下个月">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid" aria-labelledby="month-title"></div>
+        <div class="legend" aria-hidden="true">
+          <span><i class="sw avail"></i><span data-zh="可预约">Available</span></span>
+          <span><i class="sw off">12</i><span data-zh="不可预约">Not available</span></span>
+        </div>
+        <p class="tz-note" id="tz-note"></p>
+      </div>
+
+      <div class="slots" id="slots-col">
+        <h2 class="sec-title" id="h-time"><span class="n" id="n3"><span>3</span></span><span data-zh="时间">Time</span></h2>
+        <div id="slots" aria-live="polite"></div>
+      </div>
+
+      <div class="col-form">
+        <!-- 新预约：填写信息 -->
+        <form id="details-form" novalidate>
+          <h2 class="sec-title" id="h-details"><span class="n" id="n4"><span>4</span></span><span data-zh="您的信息">Your details</span></h2>
+          <div class="when-box" id="when-box">Choose a date and time to continue.</div>
+          <div id="form-error" role="alert"></div>
+          <div class="field">
+            <label for="f-name" data-zh="姓名">Full name</label>
+            <input id="f-name" name="name" type="text" autocomplete="name" required aria-describedby="e-name">
+            <span class="field-error" id="e-name" hidden></span>
+          </div>
+          <div class="two">
+            <div class="field">
+              <label for="f-phone" data-zh="手机号码">Mobile phone</label>
+              <input id="f-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required aria-describedby="e-phone">
+              <span class="field-error" id="e-phone" hidden></span>
+            </div>
+            <div class="field">
+              <label for="f-email" data-zh="电子邮箱">Email</label>
+              <input id="f-email" name="email" type="email" autocomplete="email" required aria-describedby="e-email">
+              <span class="field-error" id="e-email" hidden></span>
+            </div>
+          </div>
+          <div class="hp" aria-hidden="true">
+            <label for="f-company">Company</label>
+            <input id="f-company" name="company" type="text" tabindex="-1" autocomplete="off">
+          </div>
+          <div class="field">
+            <label class="check" for="f-consent">
+              <input id="f-consent" type="checkbox" aria-describedby="e-consent">
+              <span class="en-only">I consent to EternaWell Medicine collecting the information on this form, including the visit type I choose, to schedule my visit and contact me about it, as described in the <a href="../../legal/#health-data" target="_top">Consumer Health Data Privacy Policy</a>.</span><span class="zh-only">我同意 EternaWell Medicine 收集本表中的信息（包括我选择的看诊类型），用于安排就诊并就此与我联系，详见<a href="../../zh/legal/#health-data" target="_top">消费者健康数据隐私政策</a>。</span>
+            </label>
+            <span class="field-error" id="e-consent" hidden></span>
+          </div>
+          <details class="privacy">
+            <summary data-zh="隐私说明">Privacy notice</summary>
+            <p class="zh-only">我们只收集您的姓名、电话和邮箱，用于安排就诊。请不要在这里填写病情。首次就诊前，我们会发给您一份安全的健康问卷。我们绝不出售您的信息。华盛顿州居民可随时致电 <span class="js-phone">206-507-2504</span> 要求查看或删除您的信息。详见：<a href="../../zh/legal/#privacy" target="_top">隐私政策</a> · <a href="../../zh/legal/#health-data" target="_top">消费者健康数据隐私政策</a>。</p>
+            <p class="en-only">We only collect your name, phone number and email to schedule your visit. Please don’t include medical details here. Before your first visit we’ll send a secure intake form for your health history. We never sell your information. Washington residents: you may ask us to see or delete your information at any time by calling <span class="js-phone">206-507-2504</span>. Full details: <a href="../../legal/#privacy" target="_top">Privacy Policy</a> · <a href="../../legal/#health-data" target="_top">Consumer Health Data Privacy Policy</a>.</p>
+          </details>
+          <button type="submit" class="btn submit" id="submit-btn" data-zh="确认预约">Confirm appointment</button>
+        </form>
+
+        <!-- 改期：确认新时间 -->
+        <div id="move-box" hidden>
+          <h2 class="sec-title"><span class="n"><span>4</span></span><span data-zh="确认">Confirm</span></h2>
+          <div id="move-error" role="alert"></div>
+          <dl class="info-list" id="move-list"></dl>
+          <div class="actions">
+            <button type="button" class="btn" id="move-btn" data-zh="确认新时间">Confirm new time</button>
+            <button type="button" class="btn secondary" id="move-back" data-zh="保留原时间">Keep current time</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 完成 -->
+  <section class="card result" id="view-done" hidden aria-labelledby="h-done">
+    <div class="done-head">
+      <div class="done-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#146C43" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </div>
+      <div>
+        <h2 id="h-done" style="margin:0">You’re booked!</h2>
+        <p style="margin:4px 0 0;color:var(--muted)" id="done-sub"></p>
+      </div>
+    </div>
+    <dl class="info-list" id="done-list"></dl>
+    <div class="actions" style="margin-bottom:20px">
+      <a class="btn secondary" id="gcal-link" target="_blank" rel="noopener" data-zh="加入 Google 日历">Add to Google Calendar</a>
+      <button type="button" class="btn secondary" id="ics-btn" data-zh="下载日历文件（.ics）">Download calendar file (.ics)</button>
+    </div>
+    <p style="margin:0 0 8px" class="zh-only"><strong>需要改期或取消？</strong>请使用下面的私人链接（邮件里也有），或致电 <a class="js-phone-link" href="tel:2065072504"><span class="js-phone">206-507-2504</span></a>。</p>
+    <p style="margin:0 0 8px" class="en-only"><strong>Need to change or cancel?</strong> Use this private link (also in your email), or call <a class="js-phone-link" href="tel:2065072504"><span class="js-phone">206-507-2504</span></a>.</p>
+    <p class="manage-link"><a id="manage-link" href="#" target="_top"></a></p>
+  </section>
+
+  <!-- 管理已有预约 -->
+  <section class="card result" id="view-manage" hidden aria-labelledby="h-manage">
+    <h2 id="h-manage" style="margin:0 0 16px" data-zh="您的预约">Your appointment</h2>
+    <div id="manage-msg"></div>
+    <dl class="info-list" id="manage-list"></dl>
+    <div class="actions" id="manage-actions">
+      <button type="button" class="btn" id="reschedule-btn" data-zh="改期">Reschedule</button>
+      <button type="button" class="btn danger secondary" id="cancel-btn" data-zh="取消预约">Cancel appointment</button>
+    </div>
+  </section>
+
+  <!-- 已取消 -->
+  <section class="card result" id="view-cancelled" hidden aria-labelledby="h-cancelled">
+    <div class="done-head">
+      <div class="done-icon cancel" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5B6B71" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </div>
+      <h2 id="h-cancelled" style="margin:0" data-zh="您的预约已取消">Your appointment has been cancelled</h2>
+    </div>
+    <p data-zh="确认邮件已发到您的邮箱。期待下次为您服务。">We’ve sent a confirmation to your email. We hope to see you another time.</p>
+    <a class="btn" id="new-booking-link" href="booking.html" target="_top" data-zh="重新预约">Book a new appointment</a>
+  </section>
+
+  <!-- 出错 -->
+  <section class="card result" id="view-error" hidden aria-labelledby="h-error">
+    <h2 id="h-error" style="margin:0 0 12px" data-zh="出了点问题">Something went wrong</h2>
+    <p id="error-text"></p>
+    <p class="zh-only">请重试，或致电 <a class="js-phone-link" href="tel:2065072504"><span class="js-phone">206-507-2504</span></a>。</p>
+    <p class="en-only">Please try again, or call us at <a class="js-phone-link" href="tel:2065072504"><span class="js-phone">206-507-2504</span></a>.</p>
+    <button type="button" class="btn" onclick="location.reload()" data-zh="重试">Try again</button>
+  </section>
+</main>
+
+<dialog id="cancel-dialog" aria-labelledby="h-cancel-dialog">
+  <h2 id="h-cancel-dialog" data-zh="确定取消这个预约吗？">Cancel this appointment?</h2>
+  <p id="cancel-dialog-text"></p>
+  <div id="cancel-error" role="alert"></div>
+  <div class="dialog-actions">
+    <button type="button" class="btn secondary" id="cancel-keep" data-zh="保留预约">Keep appointment</button>
+    <button type="button" class="btn danger" id="cancel-confirm" data-zh="是的，取消">Yes, cancel it</button>
+  </div>
+</dialog>
+
+<script>
+  // 把内容高度告诉官网页面，iframe 跟着变高，不出现内层滚动条
+  if (window.EW_EMBED && 'ResizeObserver' in window) {
+    let last = 0;
+    new ResizeObserver(() => {
+      const h = Math.ceil(document.documentElement.getBoundingClientRect().height);
+      if (h !== last) { last = h; parent.postMessage({ type: 'ew-height', h: h }, location.origin); }
+    }).observe(document.documentElement);
+  }
+</script>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const esc = EW.esc;
+
+  /* ── 中英文 ── */
+  const ZH = window.EW_LANG === 'zh';
+  const L = (en, zh) => (ZH ? zh : en);
+  const TYPE_ZH = {
+    consult: ['免费 20 分钟咨询', '免费的初次交流，聊聊您的症状和目标。想用视频？请选"视频问诊"，或在我们确认时告诉我们。'],
+    new: ['新患者初诊', '第一次就诊：了解您的病史、症状和目标，并讨论化验方案。'],
+    follow: ['复诊', '老患者复查结果、调整治疗。'],
+    tele: ['视频问诊', '在家通过安全视频就诊，我们会在就诊前把视频链接发到您的邮箱。']
+  };
+  const tName = (id, name) => (ZH && TYPE_ZH[id] ? TYPE_ZH[id][0] : name);
+  const tDesc = t => (ZH && TYPE_ZH[t.id] ? TYPE_ZH[t.id][1] : t.description || '');
+  const ERR_ZH = {
+    TAKEN: '抱歉，这个时间刚被约走了，请选择其他时间。',
+    NOT_FOUND: '找不到这个预约，可能已经取消。'
+  };
+  const ERR_MSG_ZH = {
+    'Please choose a visit type.': '请选择看诊类型。',
+    'Please choose a date and time.': '请选择日期和时间。',
+    'Please agree to the privacy notice to continue.': '请勾选同意隐私说明后继续。',
+    'Network error. Please check your connection and try again.': '网络错误，请检查网络后重试。'
+  };
+  function errMsg(err) {
+    if (!ZH) return err.message;
+    if (ERR_ZH[err.code]) return ERR_ZH[err.code];
+    if (ERR_MSG_ZH[err.message]) return ERR_MSG_ZH[err.message];
+    if (err.code === 'TOO_LATE') return '距离就诊时间太近，无法在网上更改，请致电 ' + ((state.cfg && state.cfg.clinicPhone) || '206-507-2504') + '。';
+    if (/Too many booking attempts/.test(err.message)) return '预约尝试次数过多，请致电 ' + ((state.cfg && state.cfg.clinicPhone) || '206-507-2504') + '。';
+    return err.message;
+  }
+  if (ZH) {
+    const pad = EW.pad;
+    EW.prettyDate = (date, withYear) => {
+      const p = date.split('-').map(Number);
+      return (withYear === false ? '' : p[0] + ' 年 ') + p[1] + ' 月 ' + p[2] + ' 日 ' + EW.ZH_DAYS[EW.weekday(date)];
+    };
+    EW.prettyTime = hm => {
+      const m = EW.toMin(hm), h = Math.floor(m / 60);
+      return (h < 12 ? '上午 ' : '下午 ') + ((h + 11) % 12 + 1) + ':' + pad(m % 60);
+    };
+    EW.monthTitle = month => month.slice(0, 4) + ' 年 ' + Number(month.slice(5, 7)) + ' 月';
+    document.querySelectorAll('[data-zh]').forEach(el => { el.textContent = el.dataset.zh; });
+    document.querySelectorAll('[data-zh-label]').forEach(el => { el.setAttribute('aria-label', el.dataset.zhLabel); });
+  }
+  const PT = L(' PT', '（太平洋时间）');
+  const VIEWS = ['view-book', 'view-done', 'view-manage', 'view-cancelled', 'view-error'];
+
+  const state = {
+    cfg: null,
+    type: null,
+    month: '',
+    avail: {},          // 'typeId|YYYY-MM' → { 'YYYY-MM-DD': ['09:00', …] }
+    date: '',
+    time: '',
+    booking: null,      // 改期/管理时的原预约
+    rescheduling: false
+  };
+
+  if (EW.DEMO) $('demo-banner').hidden = false;
+
+  function show(view) {
+    VIEWS.forEach(v => { $(v).hidden = v !== view; });
+    setStatus('');
+    if (view !== 'view-book') {
+      $('page-title').focus({ preventScroll: true });
+      if (window.EW_EMBED) parent.postMessage({ type: 'ew-scroll' }, location.origin);
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+  function setStatus(text, loading) {
+    $('status').innerHTML = text ? '<div class="loading">' + (loading ? '<span class="spinner" aria-hidden="true"></span>' : '') + esc(text) + '</div>' : '';
+  }
+  function notice(el, kind, text) {
+    el.innerHTML = text ? '<p class="notice ' + kind + '">' + esc(text) + '</p>' : '';
+  }
+  function fail(err) {
+    $('error-text').textContent = errMsg(err);
+    show('view-error');
+  }
+  const endTime = (time, dur) => { const m = EW.toMin(time) + dur; return EW.pad(Math.floor(m / 60)) + ':' + EW.pad(m % 60); };
+
+  /* ── 启动 ── */
+  async function start() {
+    setStatus(L('Loading…', '加载中…'), true);
+    try {
+      state.cfg = await EW.call('config');
+    } catch (err) {
+      return fail(err);
+    }
+    const c = state.cfg;
+    $('clinic-name').textContent = c.clinicName;
+    $('clinic-phone').textContent = c.clinicPhone;
+    document.querySelectorAll('.js-phone').forEach(el => { el.textContent = c.clinicPhone; });
+    document.querySelectorAll('.js-phone-link, #clinic-phone').forEach(el => { el.href = 'tel:' + c.clinicPhone.replace(/[^\d+]/g, ''); });
+    const local = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    $('tz-note').textContent = L('Times are Pacific Time (clinic local time).', '时间为太平洋时间（诊所当地时间）。') +
+      (local && local !== c.timezone ? L(' Your device is set to ' + local.replace(/_/g, ' ') + '.', '您的设备时区是 ' + local.replace(/_/g, ' ') + '。') : '');
+
+    $('new-booking-link').href = pageBase();
+    const params = new URLSearchParams(location.search);
+    if (params.get('b') && params.get('t')) return openManage(params.get('b'), params.get('t'));
+    renderTypes();
+    show('view-book');
+    selectType(c.visitTypes[0].id);
+  }
+
+  /* ── 1 看诊类型：单选按钮，一眼看到全部 ── */
+  function renderTypes() {
+    $('types').innerHTML = '<legend class="visually-hidden">' + L('Visit type', '看诊类型') + '</legend>' + state.cfg.visitTypes.map(t =>
+      '<div class="type-opt"><input type="radio" name="vtype" id="vt-' + esc(t.id) + '" value="' + esc(t.id) + '">' +
+      '<label for="vt-' + esc(t.id) + '"><span class="type-name">' + esc(tName(t.id, t.name)) + '</span>' +
+      '<span class="type-meta">' + t.duration + L(' min · ', ' 分钟 · ') + (t.mode === 'telehealth' ? L('Video visit', '视频') : L('In person', '面诊')) + '</span></label></div>').join('');
+  }
+  $('types').addEventListener('change', e => { if (e.target.name === 'vtype') selectType(e.target.value); });
+
+  function selectType(id) {
+    state.type = state.cfg.visitTypes.filter(t => t.id === id)[0];
+    const r = $('vt-' + id);
+    if (r) r.checked = true;
+    $('type-desc').textContent = tDesc(state.type);
+    $('n1').classList.add('done');
+    state.time = '';
+    loadMonth(!state.month || !state.date);
+    updateWhen();
+  }
+
+  /* ── 2 日期 ── */
+  async function fetchMonth(month) {
+    const key = state.type.id + '|' + month;
+    if (state.avail[key]) return state.avail[key];
+    const last = EW.addDays(state.cfg.today, state.cfg.maxAdvanceDays);
+    let from = month + '-01';
+    let to = month + '-' + EW.pad(EW.daysInMonth(Number(month.slice(0, 4)), Number(month.slice(5, 7))));
+    if (from < state.cfg.today) from = state.cfg.today;
+    if (to > last) to = last;
+    const days = from > to ? {} : (await EW.call('availability', { typeId: state.type.id, from: from, to: to })).days;
+    state.avail[key] = days;
+    return days;
+  }
+
+  let loadSeq = 0;
+  async function loadMonth(findFirst) {
+    const seq = ++loadSeq;
+    if (!state.month) state.month = state.cfg.today.slice(0, 7);
+    renderCalendar(null);
+    $('slots').innerHTML = '<div class="loading"><span class="spinner" aria-hidden="true"></span>' + L('Checking availability…', '正在查询可约时间…') + '</div>';
+    try {
+      let days = await fetchMonth(state.month);
+      if (findFirst) {
+        // 本月约满就自动往后找有空的月份
+        const lastMonth = EW.addDays(state.cfg.today, state.cfg.maxAdvanceDays).slice(0, 7);
+        while (!Object.keys(days).length && state.month < lastMonth) {
+          state.month = EW.shiftMonth(state.month, 1);
+          days = await fetchMonth(state.month);
+        }
+      }
+      if (seq !== loadSeq) return;
+      // 换了类型后原来选的日子没空了，就选这个月第一个有空的日子
+      if (!days[state.date]) state.date = Object.keys(days).sort()[0] || '';
+      renderCalendar(days);
+      renderSlots(days);
+      updateWhen();
+    } catch (err) {
+      if (seq === loadSeq) $('slots').innerHTML = '<p class="notice error">' + esc(errMsg(err)) + '</p>';
+    }
+  }
+
+  function renderCalendar(days) {
+    const m = state.month;
+    const y = Number(m.slice(0, 4)), mo = Number(m.slice(5, 7));
+    $('month-title').textContent = EW.monthTitle(m);
+    $('prev-month').disabled = m <= state.cfg.today.slice(0, 7);
+    $('next-month').disabled = m >= EW.addDays(state.cfg.today, state.cfg.maxAdvanceDays).slice(0, 7);
+    let html = (ZH ? ['日', '一', '二', '三', '四', '五', '六'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']).map(d => '<div class="cal-dow" aria-hidden="true">' + d + '</div>').join('');
+    for (let i = 0; i < EW.weekday(m + '-01'); i++) html += '<div></div>';
+    for (let d = 1; d <= EW.daysInMonth(y, mo); d++) {
+      const date = EW.ymd(y, mo, d);
+      const slots = days && days[date];
+      const today = date === state.cfg.today ? ' today' : '';
+      html += slots
+        ? '<button type="button" class="cal-day' + today + '" data-date="' + date + '" aria-pressed="' + (date === state.date) + '" aria-label="' + EW.prettyDate(date, false) + L(', ' + slots.length + ' times available', '，' + slots.length + ' 个时段可约') + '"><span>' + d + '</span></button>'
+        : '<div class="cal-day off' + today + '"><span aria-hidden="true">' + d + '</span><span class="visually-hidden">' + EW.prettyDate(date, false) + L(', not available', '，不可预约') + '</span></div>';
+    }
+    $('cal-grid').innerHTML = html;
+    $('n2').classList.toggle('done', !!(days && days[state.date]));
+  }
+
+  function renderSlots(days) {
+    const box = $('slots');
+    const list = days[state.date];
+    $('n3').classList.toggle('done', !!state.time);
+    if (!Object.keys(days).length) {
+      box.innerHTML = '<p class="empty">' + L('No openings in ' + EW.monthTitle(state.month) + '. Try the next month, or call us at ' + esc(state.cfg.clinicPhone) + '.',
+        EW.monthTitle(state.month) + '已约满。请看看下个月，或致电 ' + esc(state.cfg.clinicPhone) + '。') + '</p>';
+      return;
+    }
+    if (!list) {
+      box.innerHTML = '<p class="empty">' + L('Select a highlighted date to see times.', '请点选一个有颜色的日期查看时间。') + '</p>';
+      return;
+    }
+    let lastGroup = '';
+    box.innerHTML = '<h3>' + esc(EW.prettyDate(state.date, false)) + '</h3><p class="hint" style="margin:0">' + L(list.length + ' times available', list.length + ' 个时段可约') + '</p>' +
+      '<div class="slot-list" role="group" aria-label="' + L('Available times', '可约时间') + '">' + list.map(t => {
+        const g = t < '12:00' ? L('Morning', '上午') : t < '17:00' ? L('Afternoon', '下午') : L('Evening', '晚上');
+        const sep = g !== lastGroup ? '<div class="slot-sep" aria-hidden="true">' + g + '</div>' : '';
+        lastGroup = g;
+        return sep + '<button type="button" class="slot" data-time="' + t + '" aria-pressed="' + (t === state.time) + '">' + EW.prettyTime(t) + '</button>';
+      }).join('') + '</div>';
+  }
+
+  const currentDays = () => state.avail[state.type.id + '|' + state.month] || {};
+
+  $('cal-grid').addEventListener('click', e => {
+    const btn = e.target.closest('button.cal-day');
+    if (!btn) return;
+    state.date = btn.dataset.date;
+    state.time = '';
+    renderCalendar(currentDays());
+    renderSlots(currentDays());
+    updateWhen();
+    if (window.matchMedia('(max-width: 640px)').matches) $('slots-col').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  $('prev-month').addEventListener('click', () => { state.month = EW.shiftMonth(state.month, -1); state.time = ''; loadMonth(); });
+  $('next-month').addEventListener('click', () => { state.month = EW.shiftMonth(state.month, 1); state.time = ''; loadMonth(); });
+
+  /* ── 3 时间 ── */
+  $('slots').addEventListener('click', e => {
+    const btn = e.target.closest('.slot');
+    if (!btn) return;
+    state.time = btn.dataset.time;
+    renderSlots(currentDays());
+    updateWhen();
+    // 窄屏上自动滚到填写信息
+    if (window.matchMedia('(max-width: 1040px)').matches) {
+      document.querySelector('.col-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    (state.rescheduling ? $('move-btn') : $('f-name')).focus({ preventScroll: true });
+  });
+
+  /* ── 4 信息 / 确认 ── */
+  function whenHtml() {
+    const end = endTime(state.time, state.type.duration);
+    return esc(EW.prettyDate(state.date)) + '<br>' + EW.prettyTime(state.time) + ' – ' + EW.prettyTime(end) + PT;
+  }
+
+  function updateWhen() {
+    const box = $('when-box');
+    if (state.rescheduling) return renderMove();
+    if (!state.time) {
+      box.className = 'when-box';
+      box.textContent = L('Choose a date and time to continue.', '请先选择日期和时间。');
+      $('n4').classList.remove('done');
+      return;
+    }
+    const t = state.type;
+    box.className = 'when-box set';
+    box.innerHTML = '<strong>' + esc(tName(t.id, t.name)) + ' · ' + t.duration + L(' min', ' 分钟') + '</strong>' + whenHtml() +
+      '<br><span class="hint">' + (t.mode === 'telehealth' ? L('Video visit. We’ll email you a secure link.', '视频问诊，我们会把安全链接发到您的邮箱。') : esc(state.cfg.clinicAddress)) + '</span>';
+  }
+
+  function fieldError(id, msg) {
+    const input = $('f-' + id), err = $('e-' + id);
+    err.textContent = msg || '';
+    err.hidden = !msg;
+    if (msg) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid');
+    return !msg;
+  }
+
+  function validate() {
+    const name = $('f-name').value.trim(), phone = $('f-phone').value.trim(), email = $('f-email').value.trim();
+    const digits = phone.replace(/\D/g, '');
+    const results = [
+      ['name', fieldError('name', name.length < 2 ? L('Please enter your full name.', '请填写您的姓名。') : '')],
+      ['phone', fieldError('phone', digits.length < 10 || digits.length > 15 ? L('Include area code, e.g. 206-555-0123.', '请包含区号，例如 206-555-0123。') : '')],
+      ['email', fieldError('email', !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? L('e.g. name@example.com', '请填写有效邮箱，例如 name@example.com') : '')],
+      ['consent', fieldError('consent', !$('f-consent').checked ? L('Please check this box to continue.', '请勾选此项后继续。') : '')]
+    ];
+    const firstBad = results.filter(x => !x[1])[0];
+    if (firstBad) $('f-' + firstBad[0]).focus();
+    return !firstBad;
+  }
+
+  $('details-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    notice($('form-error'), '', '');
+    if (!state.time) {
+      notice($('form-error'), 'warn', L('Please choose a date and time first.', '请先选择日期和时间。'));
+      $('slots-col').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    if (!validate()) return;
+    const btn = $('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" aria-hidden="true" style="border-color:rgba(255,255,255,.4);border-top-color:#fff"></span>' + L('Booking…', '正在预约…');
+    try {
+      const b = await EW.call('book', {
+        typeId: state.type.id, date: state.date, time: state.time,
+        name: $('f-name').value, phone: $('f-phone').value, email: $('f-email').value,
+        consent: $('f-consent').checked, company: $('f-company').value
+      });
+      showDone(b, false);
+    } catch (err) {
+      notice($('form-error'), err.code === 'TAKEN' ? 'warn' : 'error', errMsg(err));
+      if (err.code === 'TAKEN') {
+        delete state.avail[state.type.id + '|' + state.month];
+        state.time = '';
+        loadMonth();
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = L('Confirm appointment', '确认预约');
+    }
+  });
+
+  /* ── 完成 ── */
+  function pageBase() {
+    // 嵌入时，私人链接要指向官网的预约页，而不是 iframe 里的这个文件
+    let href = location.href;
+    if (window.EW_EMBED) { try { href = window.top.location.href; } catch (e) { /* 跨域时退回本页 */ } }
+    return href.split('?')[0].split('#')[0];
+  }
+
+  function infoRows(b) {
+    return '<dt>' + L('Visit', '看诊') + '</dt><dd>' + esc(tName(b.typeId, b.typeName)) + ' (' + b.duration + L(' min', ' 分钟') + ')</dd>' +
+      '<dt>' + L('When', '时间') + '</dt><dd>' + esc(EW.prettyDate(b.date)) + L(', ', ' ') + EW.prettyTime(b.time) + ' – ' + EW.prettyTime(b.end) + PT + '</dd>' +
+      '<dt>' + L('Where', '地点') + '</dt><dd>' + (b.mode === 'telehealth' ? L('Video visit. We’ll email you a secure link.', '视频问诊，我们会把安全链接发到您的邮箱。') : esc(b.clinicAddress)) + '</dd>' +
+      '<dt>' + L('Name', '姓名') + '</dt><dd>' + esc(b.name) + '</dd>' +
+      '<dt>' + L('Confirmation #', '预约编号') + '</dt><dd>' + esc(b.id) + '</dd>';
+  }
+
+  function showDone(b, moved) {
+    $('page-title').textContent = moved ? L('Appointment rescheduled', '改期成功') : L('Appointment confirmed', '预约成功');
+    $('page-sub').textContent = '';
+    $('h-done').textContent = moved ? L('Your appointment has been rescheduled', '您的预约已改到新时间') : L('You’re booked!', '预约成功！');
+    $('done-sub').textContent = L('A confirmation has been sent to ' + b.email + '.', '确认邮件已发送到 ' + b.email + '。');
+    $('done-list').innerHTML = infoRows(b);
+    const start = EW.clinicTimeToDate(b.date, b.time), end = EW.clinicTimeToDate(b.date, b.end);
+    const z = d => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const place = b.mode === 'telehealth' ? 'Telehealth video visit' : b.clinicAddress;
+    const title = tName(b.typeId, b.typeName) + ' — ' + state.cfg.clinicName;
+    const details = 'Confirmation #' + b.id + '. To change or cancel, call ' + b.clinicPhone + '.';
+    $('gcal-link').href = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+      '&text=' + encodeURIComponent(title) + '&dates=' + z(start) + '/' + z(end) +
+      '&details=' + encodeURIComponent(details) + '&location=' + encodeURIComponent(place);
+    $('ics-btn').onclick = () => {
+      const e2 = t => String(t).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,');
+      const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//EternaWell Medicine//Booking//EN', 'BEGIN:VEVENT',
+        'UID:' + b.id + '@eternawell-booking', 'DTSTAMP:' + z(new Date()), 'DTSTART:' + z(start), 'DTEND:' + z(end),
+        'SUMMARY:' + e2(title), 'LOCATION:' + e2(place), 'DESCRIPTION:' + e2(details), 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+      a.download = 'appointment.ics';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    };
+    const link = pageBase() + '?b=' + encodeURIComponent(b.id) + '&t=' + encodeURIComponent(b.token);
+    $('manage-link').href = link;
+    $('manage-link').textContent = link;
+    state.rescheduling = false;
+    show('view-done');
+  }
+
+  /* ── 管理已有预约：查看、改期、取消 ── */
+  async function openManage(id, token) {
+    $('page-title').textContent = L('Manage your appointment', '管理您的预约');
+    $('page-sub').textContent = '';
+    setStatus(L('Loading your appointment…', '正在读取您的预约…'), true);
+    try {
+      state.booking = await EW.call('getBooking', { id: id, token: token });
+    } catch (err) {
+      $('manage-list').innerHTML = '';
+      $('manage-actions').hidden = true;
+      notice($('manage-msg'), 'error', errMsg(err));
+      $('manage-msg').insertAdjacentHTML('beforeend', '<a class="btn" target="_top" href="' + esc(pageBase()) + '">' + L('Book a new appointment', '重新预约') + '</a>');
+      return show('view-manage');
+    }
+    const b = state.booking;
+    $('manage-list').innerHTML = infoRows(b);
+    $('manage-actions').hidden = !b.canChange;
+    notice($('manage-msg'), b.canChange ? '' : 'warn', b.canChange ? '' :
+      L('Your visit is less than ' + b.cancelNoticeHours + ' hours away, so it can’t be changed online. Please call us at ' + b.clinicPhone + '.',
+        '距离就诊不到 ' + b.cancelNoticeHours + ' 小时，无法在网上更改，请致电 ' + b.clinicPhone + '。'));
+    show('view-manage');
+  }
+
+  $('reschedule-btn').addEventListener('click', () => {
+    const b = state.booking;
+    state.rescheduling = true;
+    state.type = state.cfg.visitTypes.filter(t => t.id === b.typeId)[0] ||
+      { id: b.typeId, name: b.typeName, duration: b.duration, mode: b.mode };
+    state.date = state.time = '';
+    state.avail = {};
+    $('page-title').textContent = L('Choose a new time', '选择新时间');
+    $('page-sub').textContent = L('Your current appointment stays in place until you confirm the new time.', '在您确认新时间之前，原预约保持不变。');
+    $('type-section').innerHTML = '<h2 class="sec-title"><span class="n done"><span>1</span></span>' + L('Visit type', '看诊类型') + '</h2>' +
+      '<div class="locked-type"><strong>' + esc(tName(state.type.id, state.type.name)) + '</strong> · ' + state.type.duration + L(' min', ' 分钟') + '</div>';
+    $('details-form').hidden = true;
+    $('move-box').hidden = false;
+    show('view-book');
+    loadMonth(true);
+    renderMove();
+  });
+
+  function renderMove() {
+    const b = state.booking;
+    $('move-list').innerHTML =
+      '<dt>' + L('Current', '原时间') + '</dt><dd><s>' + esc(EW.prettyDate(b.date)) + L(', ', ' ') + EW.prettyTime(b.time) + '</s><span class="visually-hidden">' + L(' (will be replaced)', '（将被替换）') + '</span></dd>' +
+      '<dt>' + L('New', '新时间') + '</dt><dd>' + (state.time ? whenHtml() : '<span class="hint">' + L('Choose a date and time', '请选择日期和时间') + '</span>') + '</dd>';
+    $('move-btn').disabled = !state.time;
+  }
+  $('move-back').addEventListener('click', () => { (window.EW_EMBED ? window.top : window).location.href = pageBase() + '?b=' + encodeURIComponent(state.booking.id) + '&t=' + encodeURIComponent(state.booking.token); });
+  $('move-btn').addEventListener('click', async () => {
+    const btn = $('move-btn');
+    btn.disabled = true;
+    notice($('move-error'), '', '');
+    try {
+      const b = await EW.call('reschedule', { id: state.booking.id, token: state.booking.token, date: state.date, time: state.time });
+      state.booking = b;
+      showDone(b, true);
+    } catch (err) {
+      notice($('move-error'), 'error', errMsg(err));
+      if (err.code === 'TAKEN') { state.avail = {}; state.time = ''; loadMonth(); }
+      btn.disabled = false;
+    }
+  });
+
+  const dlg = $('cancel-dialog');
+  $('cancel-btn').addEventListener('click', () => {
+    const b = state.booking;
+    $('cancel-dialog-text').textContent = L(b.typeName + ' on ' + EW.prettyDate(b.date) + ' at ' + EW.prettyTime(b.time) + '.',
+      EW.prettyDate(b.date) + ' ' + EW.prettyTime(b.time) + ' 的' + tName(b.typeId, b.typeName) + '。');
+    notice($('cancel-error'), '', '');
+    dlg.showModal();
+    $('cancel-keep').focus();
+  });
+  $('cancel-keep').addEventListener('click', () => dlg.close());
+  $('cancel-confirm').addEventListener('click', async () => {
+    const btn = $('cancel-confirm');
+    btn.disabled = true;
+    try {
+      await EW.call('cancel', { id: state.booking.id, token: state.booking.token });
+      dlg.close();
+      $('page-title').textContent = L('Appointment cancelled', '预约已取消');
+      show('view-cancelled');
+    } catch (err) {
+      notice($('cancel-error'), 'error', errMsg(err));
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  start();
+})();
+</script>
+</body>
+</html>

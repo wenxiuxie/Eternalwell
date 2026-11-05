@@ -1,0 +1,127 @@
+/*
+ * 配色按 WCAG 2.1 AA：正文对比度 ≥ 4.5:1，输入框边框等界面元素 ≥ 3:1。
+ * 状态不只靠颜色区分：可约/不可约/已选都同时有文字、图形或边框差别。
+ */
+:root {
+  --bg: #F4F8FA;
+  --surface: #FFFFFF;
+  --ink: #12313A;          /* 正文，白底上 13:1 */
+  --muted: #4A6670;        /* 次要文字，白底上 6:1 */
+  --faint: #64757B;        /* 不可约日期，白底上 4.8:1 */
+  --primary: #0B6477;      /* 主色，白底上 6.8:1 */
+  --primary-dark: #084C5B;
+  --primary-weak: #E2F1F4;
+  --primary-line: #8CC3CF;
+  --field-line: #6B8790;   /* 输入框边框，白底上 3.8:1 */
+  --line: #D5E3E7;
+  --danger: #B42318;
+  --danger-weak: #FDECEA;
+  --ok: #146C43;
+  --ok-weak: #E6F4EC;
+  --warn: #8A5300;
+  --warn-weak: #FFF4E0;
+  --block: #5B6B71;
+  --block-weak: #ECEFF1;
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(18, 49, 58, .06), 0 4px 16px rgba(18, 49, 58, .06);
+  --focus: 0 0 0 3px #FFFFFF, 0 0 0 5px #0B6477;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.55 "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+h1, h2, h3 { line-height: 1.25; margin: 0; }
+a { color: var(--primary); }
+a:hover { color: var(--primary-dark); }
+:focus-visible { outline: none; box-shadow: var(--focus); border-radius: 6px; }
+/* 切换步骤时用脚本把焦点移到标题上（方便读屏软件），标题本身不需要焦点框 */
+[tabindex="-1"]:focus { outline: none; box-shadow: none; }
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+[hidden] { display: none !important; }
+
+/* ── 按钮 ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 10px 20px;
+  border: 2px solid var(--primary); border-radius: 10px;
+  background: var(--primary); color: #fff;
+  font: inherit; font-weight: 600; text-decoration: none; cursor: pointer;
+}
+.btn:hover { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.btn.secondary { background: var(--surface); color: var(--primary); }
+.btn.secondary:hover { background: var(--primary-weak); color: var(--primary-dark); }
+.btn.danger { background: var(--danger); border-color: var(--danger); }
+.btn.danger.secondary { background: var(--surface); color: var(--danger); }
+.btn.danger.secondary:hover { background: var(--danger-weak); }
+.btn.small { min-height: 36px; padding: 6px 12px; font-size: 14px; }
+.link-btn {
+  background: none; border: 0; padding: 0; color: var(--primary); font: inherit; font-weight: 600;
+  text-decoration: underline; cursor: pointer;
+}
+
+/* ── 表单 ── */
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.field label, .label { font-weight: 600; }
+.hint { color: var(--muted); font-size: 14px; }
+input[type=text], input[type=tel], input[type=email], input[type=password], input[type=number],
+input[type=date], input[type=time], input[type=url], select, textarea {
+  width: 100%; min-height: 44px; padding: 10px 12px;
+  border: 1.5px solid var(--field-line); border-radius: 8px;
+  background: var(--surface); color: var(--ink); font: inherit;
+}
+textarea { min-height: 80px; resize: vertical; }
+input[aria-invalid=true] { border-color: var(--danger); border-width: 2px; }
+.field-error { color: var(--danger); font-size: 14px; font-weight: 600; }
+.field-error::before { content: "⚠ "; }
+.check { display: flex; gap: 10px; align-items: flex-start; }
+.check input { width: 20px; height: 20px; margin: 3px 0 0; flex: none; accent-color: var(--primary); }
+
+/* ── 提示条 ── */
+.notice {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 16px; border-radius: 10px; border: 1.5px solid; margin: 0 0 16px;
+}
+.notice::before { font-weight: 700; flex: none; }
+.notice.info { background: var(--primary-weak); border-color: var(--primary-line); }
+.notice.info::before { content: "i"; color: var(--primary); font-family: Georgia, serif; font-style: italic; }
+.notice.error { background: var(--danger-weak); border-color: var(--danger); color: #7A1810; }
+.notice.error::before { content: "⚠"; }
+.notice.ok { background: var(--ok-weak); border-color: var(--ok); color: #0D4A2E; }
+.notice.ok::before { content: "✓"; }
+.notice.warn { background: var(--warn-weak); border-color: var(--warn); color: #5C3700; }
+.notice.warn::before { content: "!"; }
+.demo-banner {
+  background: #FFF4E0; border-bottom: 1.5px solid var(--warn); color: #5C3700;
+  padding: 8px 16px; font-size: 14px; text-align: center;
+}
+
+.spinner {
+  width: 20px; height: 20px; border: 3px solid var(--primary-line); border-top-color: var(--primary);
+  border-radius: 50%; animation: spin .8s linear infinite; flex: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+.loading { display: flex; gap: 12px; align-items: center; color: var(--muted); padding: 24px 0; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+dialog {
+  border: 0; border-radius: var(--radius); padding: 24px; max-width: min(440px, calc(100vw - 32px));
+  box-shadow: 0 12px 48px rgba(18, 49, 58, .25); color: var(--ink);
+}
+dialog::backdrop { background: rgba(18, 49, 58, .45); }
+dialog h2 { font-size: 20px; margin-bottom: 12px; }
+.dialog-actions { display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; margin-top: 20px; }
